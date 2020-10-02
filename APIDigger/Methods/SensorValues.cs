@@ -3,7 +3,7 @@
     public class SensorValues
     {
         private readonly string link;
-        private readonly string state;
+        private string state;
         private readonly string pattern;
         private readonly bool? readOnly;
         private readonly string options;
@@ -26,6 +26,11 @@
         public string GetState()
         {
             return state;
+        }
+
+        public void SetState(string updState)
+        {
+            this.state = updState;
         }
 
         public string GetPattern()

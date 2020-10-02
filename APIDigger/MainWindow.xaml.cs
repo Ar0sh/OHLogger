@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,6 +26,7 @@ namespace APIDigger
         private List<string> ItemMembers = new List<string>();
         private List<string> Items = new List<string>();
         private APILookup getData = new APILookup();
+        List<string> ApiElements = new List<string>();
         public MainWindow()
         {
             InitializeComponent();
@@ -32,7 +34,6 @@ namespace APIDigger
 
         private void API_Method_Extract(string[] elements, string type)
         {
-            List<string> ApiElements = new List<string>();
             if (type == "items")
             {
                 foreach (string t in elements)
@@ -45,8 +46,7 @@ namespace APIDigger
                     }
                 }
                 ApiElements.Sort();
-                cbItems.ItemsSource = ApiElements.Select(x => x.ToString());
-                cbItems.SelectedIndex = 0;
+                
             }
             else if (type == "members")
             {
@@ -56,8 +56,13 @@ namespace APIDigger
                         ItemMembers.Add(t);
                 }
             }
+        }
 
-            
+        private void UpdateStatus(string url, string type)
+        {
+            string[] APIElementsUnsorted = getData.OpenHab2Rest(url);
+            API_Method_Extract(APIElementsUnsorted, type);
+            getData.updateItemsDict(Items);
         }
 
         private void API_Method_Call(string url, string type)
@@ -69,8 +74,13 @@ namespace APIDigger
 
         private void Load_Click(object sender, RoutedEventArgs e)
         {
+            ApiElements.Clear();
+            getData.ItemsDict.Clear();
+            Items.Clear();
             API_Method_Call("http://192.168.1.151:8080/rest/items", "items");
-            string stop = "";
+            cbItems.ItemsSource = ApiElements.Select(x => x.ToString());
+            cbItems.SelectedIndex = 0;
+            
         }
 
         private void CbItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -78,6 +88,34 @@ namespace APIDigger
             tbItemName.Text = (sender as ComboBox).SelectedItem.ToString();
             if(getData.ItemsDict.Count > 0)
                 tbStateValue.Text = getData.ItemsDict[(sender as ComboBox).SelectedItem.ToString()].GetState();
+        }
+
+        private void Reload_Click(object sender, RoutedEventArgs e)
+        {
+            Update(true);
+        }
+
+        private void Update(bool start)
+        {
+            if (start)
+            {
+                Task task = new Task(() =>
+                {
+                    while (true)
+                    {
+                        Items.Clear();
+                        UpdateStatus("http://192.168.1.151:8080/rest/items", "items");
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (getData.ItemsDict.Count > 0)
+                                tbStateValue.Text = getData.ItemsDict[cbItems.SelectedItem.ToString()].GetState();
+                        });
+                        Thread.Sleep(10000);
+                    }
+                });
+                task.Start();
+               
+            }
         }
     }
 }

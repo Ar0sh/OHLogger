@@ -7,9 +7,11 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Button Content="Test" Click="Load_Click" Margin="109,113,540,249"/>
-        <ComboBox x:Name="cbItems" Height="20" Width="200" SelectionChanged="CbItems_SelectionChanged"/>
-        <TextBox x:Name="tbItemName" Margin="296,253,253,113"/>
+        <Button Content="Test" Click="Load_Click" Margin="10,10,639,352"/>
+        <ComboBox x:Name="cbItems" Height="20" Width="200" SelectionChanged="CbItems_SelectionChanged" Margin="158,10,434,389"/>
+        <TextBox x:Name="tbItemName" Margin="158,72,434,290"/>
         <TextBox x:Name="tbStateValue" Margin="613,10,10,372"/>
+        <Button Content="Reload" Click="Reload_Click" Margin="10,72,639,290"/>
+        <DataGrid x:Name="dgSensors" HorizontalAlignment="Left" Height="275" Margin="10,134,0,0" VerticalAlignment="Top" Width="772"/>
     </Grid>
 </Window>

@@ -57,5 +57,26 @@ namespace APIDigger.Methods
                 ItemsDict.Add(name, new SensorValues(link, state, pattern, readOnly, options));
             }
         }
+
+        public void updateItemsDict(List<string> list)
+        {
+            foreach (var element in list)
+            {
+                string name = null;
+                string state = null;
+                string[] chopped = element.Split(new char[] { ',', '/' },
+                            StringSplitOptions.RemoveEmptyEntries);
+                name = chopped[4].TrimEnd('"');
+                for (int i = 5; i < chopped.Length; i++)
+                {
+                    if (chopped[i].Contains("state\""))
+                    {
+                        state = chopped[i].Split(':')[1].TrimStart('"').TrimEnd('"');
+                    }
+                }
+                if (ItemsDict[name].GetState() != state)
+                    ItemsDict[name].SetState(state);
+            }
+        }
     }
 }
