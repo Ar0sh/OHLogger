@@ -7,11 +7,37 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Button Content="Test" Click="Load_Click" Margin="10,10,639,352"/>
-        <ComboBox x:Name="cbItems" Height="20" Width="200" SelectionChanged="CbItems_SelectionChanged" Margin="158,10,434,389"/>
-        <TextBox x:Name="tbItemName" Margin="158,72,434,290"/>
-        <TextBox x:Name="tbStateValue" Margin="613,10,10,372"/>
-        <Button Content="Reload" Click="Reload_Click" Margin="10,72,639,290"/>
-        <DataGrid x:Name="dgSensors" HorizontalAlignment="Left" Height="275" Margin="10,134,0,0" VerticalAlignment="Top" Width="772"/>
+        <TextBox x:Name="tbStateValue" Margin="0,10,10,0" HorizontalAlignment="Right" Width="54" Height="19" VerticalAlignment="Top"/>
+        <DataGrid x:Name="dgSensors" 
+                  Margin="10,34,10,10"
+                  ItemsSource="{Binding}" 
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  CanUserReorderColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" IsReadOnly="True" Width="*" Binding="{Binding Name}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Left"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="State" IsReadOnly="True" Width="200" Binding="{Binding State}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Left"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Last Update" IsReadOnly="True" Width="75" Binding="{Binding UpdateTime}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </Window>

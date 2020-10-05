@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -30,6 +31,21 @@ namespace APIDigger
         public MainWindow()
         {
             InitializeComponent();
+            Load();
+            getData.populateDataTable();
+            dgSensors.DataContext = getData.ItemsTable.AsDataView();
+            if (getData.ItemsTable.Rows.Count > 0)
+            {
+                tbStateValue.Background = Brushes.Green;
+                Task.Factory.StartNew(() =>
+                {
+                    Update(true);
+                });
+            }
+            else
+            {
+                tbStateValue.Background = Brushes.Red;
+            }
         }
 
         private void API_Method_Extract(string[] elements, string type)
@@ -70,50 +86,41 @@ namespace APIDigger
             string[] APIElementsUnsorted = getData.OpenHab2Rest(url);
             API_Method_Extract(APIElementsUnsorted, type);
             getData.populateItemsDict(Items);
+
         }
 
-        private void Load_Click(object sender, RoutedEventArgs e)
+        private void Load()
         {
             ApiElements.Clear();
             getData.ItemsDict.Clear();
             Items.Clear();
             API_Method_Call("http://192.168.1.151:8080/rest/items", "items");
-            cbItems.ItemsSource = ApiElements.Select(x => x.ToString());
-            cbItems.SelectedIndex = 0;
-            
+            //cbItems.ItemsSource = ApiElements.Select(x => x.ToString());
         }
 
-        private void CbItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            tbItemName.Text = (sender as ComboBox).SelectedItem.ToString();
-            if(getData.ItemsDict.Count > 0)
-                tbStateValue.Text = getData.ItemsDict[(sender as ComboBox).SelectedItem.ToString()].GetState();
-        }
-
-        private void Reload_Click(object sender, RoutedEventArgs e)
-        {
-            Update(true);
-        }
-
-        private void Update(bool start)
+        private async void Update(bool start)
         {
             if (start)
             {
-                Task task = new Task(() =>
+                await Task.Run(() =>
                 {
                     while (true)
                     {
                         Items.Clear();
                         UpdateStatus("http://192.168.1.151:8080/rest/items", "items");
-                        Dispatcher.Invoke(() =>
+                        dgSensors.Dispatcher.Invoke(() =>
                         {
-                            if (getData.ItemsDict.Count > 0)
-                                tbStateValue.Text = getData.ItemsDict[cbItems.SelectedItem.ToString()].GetState();
+                            if (dgSensors.IsKeyboardFocusWithin)
+                            {
+                                dgSensors.Items.Refresh();
+                                dgSensors.Focus();
+                            }
+                            else
+                                dgSensors.Items.Refresh();
                         });
-                        Thread.Sleep(10000);
+                        Thread.Sleep(1000);
                     }
                 });
-                task.Start();
                
             }
         }

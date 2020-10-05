@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace APIDigger.Methods
 {
@@ -22,39 +24,44 @@ namespace APIDigger.Methods
             return RestList;
         }
 
-        public Dictionary<string, SensorValues> ItemsDict = new Dictionary<string, SensorValues>();
+        public SortedDictionary<string, SensorValues> ItemsDict = new SortedDictionary<string, SensorValues>();
+        public DataTable ItemsTable = new DataTable("Items");
 
         public void populateItemsDict(List<string> list)
         {
             foreach(var element in list)
             {
-                string name = null;
-                string link = null;
-                string state = null;
-                string pattern = null;
-                bool? readOnly = null;
-                string options = null;
-                string[] chopped = element.Split(new char[] { ',', '/' },
-                            StringSplitOptions.RemoveEmptyEntries);
-                link = chopped[0].Split(':')[1].TrimStart('"').TrimEnd('"') + "://" +
-                              chopped[1].TrimStart('"').TrimEnd('"') + "/" +
-                              chopped[2].TrimStart('"').TrimEnd('"') + "/" +
-                              chopped[3].TrimStart('"').TrimEnd('"') + "/" +
-                              chopped[4].TrimStart('"').TrimEnd('"');
-                name = chopped[4].TrimEnd('"');
-                for (int i = 5; i < chopped.Length; i++)
+                if (element.Contains("test") == false && element.Contains("zwave_device_93139763_node20_switch_dimmer1") == false)
                 {
-                    if(chopped[i].Contains("state\""))
+                    string name = null;
+                    string link = null;
+                    string state = null;
+                    string pattern = null;
+                    bool? readOnly = null;
+                    string options = null;
+                    Brushes color = null;
+                    string[] chopped = element.Split(new char[] { ',', '/' },
+                                StringSplitOptions.RemoveEmptyEntries);
+                    link = chopped[0].Split(':')[1].TrimStart('"').TrimEnd('"') + "://" +
+                                  chopped[1].TrimStart('"').TrimEnd('"') + "/" +
+                                  chopped[2].TrimStart('"').TrimEnd('"') + "/" +
+                                  chopped[3].TrimStart('"').TrimEnd('"') + "/" +
+                                  chopped[4].TrimStart('"').TrimEnd('"');
+                    name = chopped[4].TrimEnd('"');
+                    for (int i = 5; i < chopped.Length; i++)
                     {
-                        state = chopped[i].Split(':')[1].TrimStart('"').TrimEnd('"');
+                        if (chopped[i].Contains("\"state\""))
+                        {
+                            state = chopped[i].Split(':')[1].TrimStart('"').TrimEnd('"');
+                        }
+                        else if (chopped[i].Contains("pattern\""))
+                        {
+                            if (chopped[i].Contains("stateDescription\""))
+                                pattern = chopped[i].Split(':')[2].TrimStart('"').TrimEnd('"');
+                        }
                     }
-                    else if (chopped[i].Contains("pattern\""))
-                    {
-                        if(chopped[i].Contains("stateDescription\""))
-                            pattern = chopped[i].Split(':')[2].TrimStart('"').TrimEnd('"');
-                    }
+                    ItemsDict.Add(name, new SensorValues(link, state, pattern, readOnly, options, name, color));
                 }
-                ItemsDict.Add(name, new SensorValues(link, state, pattern, readOnly, options));
             }
         }
 
@@ -62,21 +69,49 @@ namespace APIDigger.Methods
         {
             foreach (var element in list)
             {
-                string name = null;
-                string state = null;
-                string[] chopped = element.Split(new char[] { ',', '/' },
-                            StringSplitOptions.RemoveEmptyEntries);
-                name = chopped[4].TrimEnd('"');
-                for (int i = 5; i < chopped.Length; i++)
+                if (element.Contains("test") == false && element.Contains("zwave_device_93139763_node20_switch_dimmer1") == false)
                 {
-                    if (chopped[i].Contains("state\""))
+                    string name = null;
+                    string state = null;
+                    string[] chopped = element.Split(new char[] { ',', '/' },
+                                StringSplitOptions.RemoveEmptyEntries);
+                    name = chopped[4].TrimEnd('"');
+                    for (int i = 5; i < chopped.Length; i++)
                     {
-                        state = chopped[i].Split(':')[1].TrimStart('"').TrimEnd('"');
+                        if (chopped[i].Contains("\"state\""))
+                        {
+                            state = chopped[i].Split(':')[1].TrimStart('"').TrimEnd('"');
+                        }
+                    }
+                    if (ItemsDict[name].GetState() != state)
+                    {
+                        ItemsDict[name].SetState(state);
+                        foreach(DataRow dr in ItemsTable.Rows)
+                        {
+                            if (dr["Name"].ToString() == ItemsDict[name].GetName())
+                            {
+                                dr[1] = state;
+                                dr[2] = DateTime.Now.ToLongTimeString();
+                                
+                            }
+                                
+                        }
                     }
                 }
-                if (ItemsDict[name].GetState() != state)
-                    ItemsDict[name].SetState(state);
             }
+        }
+
+        public void populateDataTable()
+        {
+            ItemsTable.Clear();
+            ItemsTable.Columns.Add("Name");
+            ItemsTable.Columns.Add("State");
+            ItemsTable.Columns.Add("UpdateTime");
+            foreach (var t in ItemsDict)
+            {
+                ItemsTable.Rows.Add(t.Key, t.Value.GetState(), DateTime.Now.ToLongTimeString());
+            }
+
         }
     }
 }
