@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -22,30 +23,34 @@ namespace APIDigger
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class OpenHABRest : Window
     {
         private List<string> ItemMembers = new List<string>();
         private List<string> Items = new List<string>();
         private APILookup getData = new APILookup();
+        CancellationTokenSource source = new CancellationTokenSource();
         List<string> ApiElements = new List<string>();
-        public MainWindow()
+        public OpenHABRest()
         {
             InitializeComponent();
+            tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
             Load();
             getData.populateDataTable();
             dgSensors.DataContext = getData.ItemsTable.AsDataView();
+            int updateInt = Convert.ToInt32(tbUpdateSpeed.Text) * 1000;
             if (getData.ItemsTable.Rows.Count > 0)
             {
                 tbStateValue.Background = Brushes.Green;
-                Task.Factory.StartNew(() =>
-                {
-                    Update(true);
-                });
+                Updates(updateInt);
             }
             else
             {
                 tbStateValue.Background = Brushes.Red;
             }
+        }
+        private void Updates(int updateInt)
+        {
+            Update(true, updateInt);
         }
 
         private void API_Method_Extract(string[] elements, string type)
@@ -95,16 +100,17 @@ namespace APIDigger
             getData.ItemsDict.Clear();
             Items.Clear();
             API_Method_Call("http://192.168.1.151:8080/rest/items", "items");
-            //cbItems.ItemsSource = ApiElements.Select(x => x.ToString());
         }
 
-        private async void Update(bool start)
+        private async void Update(bool start, int updateInt)
         {
+            source = new CancellationTokenSource();
+            var token = source.Token;
             if (start)
             {
                 await Task.Run(() =>
                 {
-                    while (true)
+                    while (!token.IsCancellationRequested)
                     {
                         Items.Clear();
                         UpdateStatus("http://192.168.1.151:8080/rest/items", "items");
@@ -118,11 +124,28 @@ namespace APIDigger
                             else
                                 dgSensors.Items.Refresh();
                         });
-                        Thread.Sleep(1000);
+                        Thread.Sleep(updateInt);
                     }
-                });
+                }, token);
                
             }
+        }
+        private void tbUpdateSpeed_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = ! RegexRules.IsTextAllowed(e.Text, @"[^0-9]");
+        }
+
+        private void ReloadUpdateInterval()
+        {
+            source.Cancel();
+            Update(true, Convert.ToInt32(tbUpdateSpeed.Text) * 1000);
+            Properties.Settings.Default.UpdateInterval = Convert.ToInt32(tbUpdateSpeed.Text);
+            Properties.Settings.Default.Save();
+        }
+
+        private void btnReloadUpd_Click(object sender, RoutedEventArgs e)
+        {
+            ReloadUpdateInterval();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿<Window x:Class="APIDigger.MainWindow"
+﻿<Window x:Class="APIDigger.OpenHABRest"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,9 +7,9 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <TextBox x:Name="tbStateValue" Margin="0,10,10,0" HorizontalAlignment="Right" Width="54" Height="19" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbStateValue" Margin="0,10,10,0" HorizontalAlignment="Right" Width="59" Height="23" VerticalAlignment="Top" Focusable="False"/>
         <DataGrid x:Name="dgSensors" 
-                  Margin="10,34,10,10"
+                  Margin="10,38,10,10"
                   ItemsSource="{Binding}" 
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
@@ -39,5 +39,7 @@
                 </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
+        <TextBox x:Name="tbUpdateSpeed" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" PreviewTextInput="tbUpdateSpeed_PreviewTextInput"/>
+        <Button x:Name="btnReloadUpd" Content="Button" HorizontalAlignment="Left" Margin="135,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="btnReloadUpd_Click"/>
     </Grid>
 </Window>
