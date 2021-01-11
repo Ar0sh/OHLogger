@@ -20,20 +20,18 @@ using System.Windows.Shapes;
 
 namespace APIDigger
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class OpenHABRest : Window
     {
-        private List<string> ItemMembers = new List<string>();
-        private List<string> Items = new List<string>();
-        private APILookup getData = new APILookup();
+        private readonly List<string> ItemMembers = new List<string>();
+        private readonly List<string> Items = new List<string>();
+        private readonly APILookup getData = new APILookup();
         CancellationTokenSource source = new CancellationTokenSource();
-        List<string> ApiElements = new List<string>();
+        readonly List<string> ApiElements = new List<string>();
         public OpenHABRest()
         {
             InitializeComponent();
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
+            Title = "RestAPIDigger";
             Load();
             getData.populateDataTable();
             dgSensors.DataContext = getData.ItemsTable.AsDataView();
@@ -41,16 +39,12 @@ namespace APIDigger
             if (getData.ItemsTable.Rows.Count > 0)
             {
                 tbStateValue.Background = Brushes.Green;
-                Updates(updateInt);
+                Update(true, updateInt);
             }
             else
             {
                 tbStateValue.Background = Brushes.Red;
             }
-        }
-        private void Updates(int updateInt)
-        {
-            Update(true, updateInt);
         }
 
         private void API_Method_Extract(string[] elements, string type)
@@ -79,18 +73,14 @@ namespace APIDigger
             }
         }
 
-        private void UpdateStatus(string url, string type)
+        private void API_Method_Call(string url, string type, bool update = false)
         {
             string[] APIElementsUnsorted = getData.OpenHab2Rest(url);
             API_Method_Extract(APIElementsUnsorted, type);
-            getData.updateItemsDict(Items);
-        }
-
-        private void API_Method_Call(string url, string type)
-        {
-            string[] APIElementsUnsorted = getData.OpenHab2Rest(url);
-            API_Method_Extract(APIElementsUnsorted, type);
-            getData.populateItemsDict(Items);
+            if (!update)
+                getData.populateItemsDict(Items);
+            else
+                getData.updateItemsDict(Items);
 
         }
 
@@ -113,7 +103,7 @@ namespace APIDigger
                     while (!token.IsCancellationRequested)
                     {
                         Items.Clear();
-                        UpdateStatus("http://192.168.1.151:8080/rest/items", "items");
+                        API_Method_Call("http://192.168.1.151:8080/rest/items", "items", true);
                         dgSensors.Dispatcher.Invoke(() =>
                         {
                             if (dgSensors.IsKeyboardFocusWithin)
@@ -130,7 +120,7 @@ namespace APIDigger
                
             }
         }
-        private void tbUpdateSpeed_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        private void TbUpdateSpeed_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             e.Handled = ! RegexRules.IsTextAllowed(e.Text, @"[^0-9]");
         }
@@ -143,7 +133,7 @@ namespace APIDigger
             Properties.Settings.Default.Save();
         }
 
-        private void btnReloadUpd_Click(object sender, RoutedEventArgs e)
+        private void BtnReloadUpd_Click(object sender, RoutedEventArgs e)
         {
             ReloadUpdateInterval();
         }

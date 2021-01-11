@@ -39,7 +39,7 @@
                 </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
-        <TextBox x:Name="tbUpdateSpeed" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" PreviewTextInput="tbUpdateSpeed_PreviewTextInput"/>
-        <Button x:Name="btnReloadUpd" Content="Button" HorizontalAlignment="Left" Margin="135,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="btnReloadUpd_Click"/>
+        <TextBox x:Name="tbUpdateSpeed" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" PreviewTextInput="TbUpdateSpeed_PreviewTextInput"/>
+        <Button x:Name="btnReloadUpd" Content="Button" HorizontalAlignment="Left" Margin="135,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="BtnReloadUpd_Click"/>
     </Grid>
 </Window>
