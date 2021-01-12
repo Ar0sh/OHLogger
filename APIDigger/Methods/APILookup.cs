@@ -27,14 +27,16 @@ namespace APIDigger.Methods
         public SortedDictionary<string, SensorValues> ItemsDict = new SortedDictionary<string, SensorValues>();
         public DataTable ItemsTable = new DataTable("Items");
 
-        public void populateItemsDict(List<string> list)
+        public void PopulateItemsDict(List<string> list)
         {
             foreach(var element in list)
             {
-                if (element.Contains("test") == false && element.Contains("zwave_device_93139763_node20_switch_dimmer1") == false)
+                if (element.Contains("test") == false && 
+                    element.Contains("zwave_device_93139763_node20_switch_dimmer1") == false &&
+                    element.Contains("hue_scenes") == false)
                 {
-                    string name = null;
-                    string link = null;
+                    string name;
+                    string link;
                     string state = null;
                     string pattern = null;
                     bool? readOnly = null;
@@ -65,11 +67,13 @@ namespace APIDigger.Methods
             }
         }
 
-        public void updateItemsDict(List<string> list)
+        public void UpdateItemsDict(List<string> list)
         {
             foreach (var element in list)
             {
-                if (element.Contains("test") == false && element.Contains("zwave_device_93139763_node20_switch_dimmer1") == false)
+                if (element.Contains("test") == false &&
+                    element.Contains("zwave_device_93139763_node20_switch_dimmer1") == false &&
+                    element.Contains("hue_scenes") == false)
                 {
                     string name = null;
                     string state = null;
@@ -101,7 +105,7 @@ namespace APIDigger.Methods
             }
         }
 
-        public void populateDataTable()
+        public void PopulateDataTable()
         {
             ItemsTable.Clear();
             ItemsTable.Columns.Add("Name");

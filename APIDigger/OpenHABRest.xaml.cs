@@ -19,14 +19,14 @@ namespace APIDigger
         private readonly List<string> Items = new List<string>();
         private readonly APILookup getData = new APILookup();
         readonly List<string> ApiElements = new List<string>();
-        private Thread TableRefresh = null;
+        private readonly Thread TableRefresh = null;
         public OpenHABRest()
         {
             InitializeComponent();
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
-            Title = "RestAPIDigger";
+            Title = "Openhab REST Items";
             Load();
-            getData.populateDataTable();
+            getData.PopulateDataTable();
             dgSensors.DataContext = getData.ItemsTable.AsDataView();
             if (getData.ItemsTable.Rows.Count > 0)
             {
@@ -71,9 +71,9 @@ namespace APIDigger
             string[] APIElementsUnsorted = getData.OpenHab2Rest(url);
             API_Method_Extract(APIElementsUnsorted, type);
             if (!update)
-                getData.populateItemsDict(Items);
+                getData.PopulateItemsDict(Items);
             else
-                getData.updateItemsDict(Items);
+                getData.UpdateItemsDict(Items);
 
         }
 
