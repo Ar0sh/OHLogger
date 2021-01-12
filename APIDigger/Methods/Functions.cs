@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace APIDigger.Methods
 {
-    class RegexRules
+    class Functions
     {
         public static bool IsTextAllowed(string Text, string AllowedRegex)
         {
@@ -20,6 +20,11 @@ namespace APIDigger.Methods
             {
                 return true;
             }
+        }
+        public static void SaveUpdateInterval(string input)
+        {
+            Properties.Settings.Default.UpdateInterval = Convert.ToInt32(input);
+            Properties.Settings.Default.Save();
         }
     }
 }

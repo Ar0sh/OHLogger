@@ -66,7 +66,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Methods\RegexRules.cs" />
+    <Compile Include="Methods\Functions.cs" />
     <Compile Include="OpenHABRest.xaml.cs">
       <DependentUpon>OpenHABRest.xaml</DependentUpon>
       <SubType>Code</SubType>
