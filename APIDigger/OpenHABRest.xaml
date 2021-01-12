@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:APIDigger"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800"
+        Closed="Window_Closed">
     <Grid>
         <TextBox x:Name="tbStateValue" Margin="0,10,10,0" HorizontalAlignment="Right" Width="59" Height="23" VerticalAlignment="Top" Focusable="False"/>
         <DataGrid x:Name="dgSensors" 

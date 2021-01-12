@@ -25,8 +25,8 @@ namespace APIDigger
         private readonly List<string> ItemMembers = new List<string>();
         private readonly List<string> Items = new List<string>();
         private readonly APILookup getData = new APILookup();
-        CancellationTokenSource source = new CancellationTokenSource();
         readonly List<string> ApiElements = new List<string>();
+        private Thread TableRefresh = null;
         public OpenHABRest()
         {
             InitializeComponent();
@@ -35,11 +35,11 @@ namespace APIDigger
             Load();
             getData.populateDataTable();
             dgSensors.DataContext = getData.ItemsTable.AsDataView();
-            int updateInt = Convert.ToInt32(tbUpdateSpeed.Text) * 1000;
             if (getData.ItemsTable.Rows.Count > 0)
             {
                 tbStateValue.Background = Brushes.Green;
-                Update(true, updateInt);
+                TableRefresh = new Thread(Update);
+                TableRefresh.Start();
             }
             else
             {
@@ -92,32 +92,30 @@ namespace APIDigger
             API_Method_Call("http://192.168.1.151:8080/rest/items", "items");
         }
 
-        private async void Update(bool start, int updateInt)
+        void Update()
         {
-            source = new CancellationTokenSource();
-            var token = source.Token;
-            if (start)
+            while(TableRefresh.IsAlive)
             {
-                await Task.Run(() =>
+                try
                 {
-                    while (!token.IsCancellationRequested)
+                    Items.Clear();
+                    API_Method_Call("http://192.168.1.151:8080/rest/items", "items", true);
+                    dgSensors.Dispatcher.Invoke(() =>
                     {
-                        Items.Clear();
-                        API_Method_Call("http://192.168.1.151:8080/rest/items", "items", true);
-                        dgSensors.Dispatcher.Invoke(() =>
+                        if (dgSensors.IsKeyboardFocusWithin)
                         {
-                            if (dgSensors.IsKeyboardFocusWithin)
-                            {
-                                dgSensors.Items.Refresh();
-                                dgSensors.Focus();
-                            }
-                            else
-                                dgSensors.Items.Refresh();
-                        });
-                        Thread.Sleep(updateInt);
-                    }
-                }, token);
-               
+                            dgSensors.Items.Refresh();
+                            dgSensors.Focus();
+                        }
+                        else
+                            dgSensors.Items.Refresh();
+                    });
+                    Thread.Sleep(Properties.Settings.Default.UpdateInterval * 1000);
+                }
+                catch
+                {
+
+                }
             }
         }
         private void TbUpdateSpeed_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -127,8 +125,6 @@ namespace APIDigger
 
         private void ReloadUpdateInterval()
         {
-            source.Cancel();
-            Update(true, Convert.ToInt32(tbUpdateSpeed.Text) * 1000);
             Properties.Settings.Default.UpdateInterval = Convert.ToInt32(tbUpdateSpeed.Text);
             Properties.Settings.Default.Save();
         }
@@ -136,6 +132,11 @@ namespace APIDigger
         private void BtnReloadUpd_Click(object sender, RoutedEventArgs e)
         {
             ReloadUpdateInterval();
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            TableRefresh.Abort();
         }
     }
 }
