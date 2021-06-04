@@ -7,20 +7,20 @@ namespace APIDigger.Methods
         private readonly string link;
         private string state;
         private readonly string pattern;
-        private readonly bool? readOnly;
-        private readonly string options;
+        private readonly bool editable;
         private readonly string name;
-        private Brushes color;
+        private readonly string type;
+        private readonly string label;
 
-        public SensorValues(string link, string state, string pattern, bool? readOnly, string options, string name, Brushes color)
+        public SensorValues(string link, string state, string pattern, bool editable, string type, string name, string label)
         {
             this.link = link;
             this.state = state;
             this.pattern = pattern;
-            this.readOnly = readOnly;
-            this.options = options;
+            this.editable = editable;
+            this.type = type;
             this.name = name;
-            this.color = color;
+            this.label = label;
         }
 
         /** Returns the value used to delimit timestamps. */
@@ -36,21 +36,16 @@ namespace APIDigger.Methods
 
         public void SetState(string updState)
         {
-            this.state = updState;
+            state = updState;
         }
 
         public string GetPattern()
         {
             return pattern;
         }
-        public bool? GetReadonly()
+        public bool GetEditable()
         {
-            return readOnly;
-        }
-
-        public string GetOptions()
-        {
-            return options;
+            return editable;
         }
 
         public string GetName()
@@ -58,14 +53,14 @@ namespace APIDigger.Methods
             return name;
         }
 
-        public Brushes GetColor()
+        public string GetItemType()
         {
-            return color;
+            return type;
         }
 
-        public void SetColor(Brushes updColor)
+        public string GetLabel()
         {
-            color = updColor;
+            return label;
         }
     }
 }

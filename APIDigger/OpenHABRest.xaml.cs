@@ -1,8 +1,10 @@
-﻿using APIDigger.Methods;
+﻿using APIDigger.Classes;
+using APIDigger.Methods;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -15,21 +17,34 @@ namespace APIDigger
 {
     public partial class OpenHABRest : Window
     {
-        private readonly List<string> ItemMembers = new List<string>();
         private readonly List<string> Items = new List<string>();
         private readonly APILookup getData = new APILookup();
         public static List<Items> ItemsList = new List<Items>();
         readonly List<string> ApiElements = new List<string>();
-        private readonly Thread TableRefresh = null;
+        private Thread TableRefresh = null;
+        public bool loggedIn = false;
+        CreateTable tables = new CreateTable();
+        CreateTable createTable = new CreateTable();
         public OpenHABRest()
         {
             InitializeComponent();
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
             Title = "Openhab REST Items";
+        }
+
+        void Run()
+        {
             APILookup.RestConn();
             Load();
             getData.PopulateDataTable();
-            dgSensors.DataContext = getData.ItemsTable.AsDataView();
+            dgSensors.DataContext = getData.ItemsTable.AsDataView(); 
+            foreach (Items item in ItemsList)
+            {
+                if(!tables.Tables.Contains(item.name))
+                { 
+                    createTable.CreateTables(item.name);
+                }
+            }
             if (getData.ItemsTable.Rows.Count > 0)
             {
                 tbStateValue.Background = Brushes.Green;
@@ -40,38 +55,11 @@ namespace APIDigger
             {
                 tbStateValue.Background = Brushes.Red;
             }
+            
         }
 
-        private void API_Method_Extract(string[] elements, string type)
+        private void API_UpdateDict(bool update = false)
         {
-            if (type == "items")
-            {
-                foreach (string t in elements)
-                {
-                    if (t.Contains("\"link\"") && !t.Contains("\"members\""))
-                    {
-                        Items.Add(t.TrimStart('{').TrimEnd('}'));
-                        ApiElements.Add(Items.Last().Split(new char[] { ',', '/' }, 
-                            StringSplitOptions.RemoveEmptyEntries)[4].TrimEnd('"'));
-                    }
-                }
-                ApiElements.Sort();
-                
-            }
-            else if (type == "members")
-            {
-                foreach (string t in elements)
-                {
-                    if(t.Contains("\"members\""))
-                        ItemMembers.Add(t);
-                }
-            }
-        }
-
-        private void API_Method_Call(string url, string type, bool update = false)
-        {
-            string[] APIElementsUnsorted = getData.OpenHab2Rest(url);
-            API_Method_Extract(APIElementsUnsorted, type);
             if (!update)
                 getData.PopulateItemsDict();
             else
@@ -84,7 +72,7 @@ namespace APIDigger
             ApiElements.Clear();
             getData.ItemsDict.Clear();
             Items.Clear();
-            API_Method_Call("http://192.168.1.161:8082/rest/items", "items");
+            API_UpdateDict();
         }
 
         void Update()
@@ -94,7 +82,7 @@ namespace APIDigger
                 try
                 {
                     Items.Clear();
-                    API_Method_Call("http://192.168.1.161:8082/rest/items", "items", true);
+                    API_UpdateDict(true);
                     dgSensors.Dispatcher.Invoke(() =>
                     {
                         if (dgSensors.IsKeyboardFocusWithin)
@@ -123,9 +111,40 @@ namespace APIDigger
             Functions.SaveUpdateInterval(tbUpdateSpeed.Text);
         }
 
+        private void BtnLogInSql_Click(object sender, RoutedEventArgs e)
+        {
+            Functions.SaveSqlUser(userSql.Text, passSql.Password);
+            string conStr = ConSQL.GetConnectionString_up();
+            SqlConnection conn = new SqlConnection(conStr);
+            try
+            {
+                conn.Open();
+                userSql.IsEnabled = false;
+                passSql.IsEnabled = false;
+                userSql.Background = Brushes.Green;
+                passSql.Background = Brushes.Green;
+                loggedIn = true;
+                tables.GetSqlTables();
+                conn.Close();
+                Run();
+            }
+            catch
+            {
+                userSql.Text = "";
+                passSql.Password = "";
+                userSql.Background = Brushes.Red;
+                passSql.Background = Brushes.Red;
+            }
+            finally
+            {
+                conn.Close();
+            }
+        }
+
         private void Window_Closed(object sender, EventArgs e)
         {
-            TableRefresh.Abort();
+            if(loggedIn)
+                TableRefresh.Abort();
         }
     }
 }

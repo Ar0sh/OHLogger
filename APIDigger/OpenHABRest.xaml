@@ -24,6 +24,13 @@
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
+                <DataGridTextColumn Header="Label" IsReadOnly="True" Width="200" Binding="{Binding Label}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Left"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
                 <DataGridTextColumn Header="State" IsReadOnly="True" Width="200" Binding="{Binding State}">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -40,7 +47,10 @@
                 </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
-        <TextBox x:Name="tbUpdateSpeed" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" PreviewTextInput="TbUpdateSpeed_PreviewTextInput"/>
-        <Button x:Name="btnReloadUpd" Content="Button" HorizontalAlignment="Left" Margin="135,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="BtnReloadUpd_Click"/>
+        <TextBox x:Name="userSql" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
+        <PasswordBox x:Name="passSql" HorizontalAlignment="Left" Height="23" Margin="140,10,0,0" VerticalAlignment="Top" Width="120"/>
+        <Button x:Name="btnSqlLogin" Content="Login" HorizontalAlignment="Left" Margin="270,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="BtnLogInSql_Click"/>
+        <TextBox x:Name="tbUpdateSpeed" HorizontalAlignment="Left" Height="23" Margin="518,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" PreviewTextInput="TbUpdateSpeed_PreviewTextInput"/>
+        <Button x:Name="btnReloadUpd" Content="Apply" HorizontalAlignment="Left" Margin="643,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="BtnReloadUpd_Click"/>
     </Grid>
 </Window>

@@ -70,7 +70,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Methods\ConSQL.cs" />
+    <Compile Include="Classes\Items.cs" />
+    <Compile Include="Classes\ConSQL.cs" />
     <Compile Include="Methods\CreateTable.cs" />
     <Compile Include="Methods\Functions.cs" />
     <Compile Include="OpenHABRest.xaml.cs">

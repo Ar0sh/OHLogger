@@ -1,4 +1,5 @@
-﻿using RestSharp;
+﻿using APIDigger.Classes;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -14,44 +15,34 @@ namespace APIDigger.Methods
 {
     public class APILookup
     {
-        public string[] OpenHab2Rest(string URL)
-        {
-            var pattern = @"\{(.*?)}";
-            WebClient client = new WebClient();
-            Stream stream = client.OpenRead(URL);
-            StreamReader reader = new StreamReader(stream);
-            string content = reader.ReadToEnd();
-            string[] RestList = Regex.Matches(content, pattern).Cast<Match>().Select(m => m.Value).ToArray();
-            return RestList;
-        }
-
         public SortedDictionary<string, SensorValues> ItemsDict = new SortedDictionary<string, SensorValues>();
         public DataTable ItemsTable = new DataTable("Items");
+        private readonly List<string> exclude = new List<string>
+        {
+            "test",
+            "zwave_device_93139763_node20_switch_dimmer1",
+            "hue_scenes"
+        };
 
         public void PopulateItemsDict()
         {
             RestConn();
             foreach (Items item in OpenHABRest.ItemsList)
             {
-                if (item.name != "test" &&
-                    item.name != "zwave_device_93139763_node20_switch_dimmer1" &&
-                    item.name != "hue_scenes")
+                if(!exclude.Contains(item.name))
                 {
-                    string name;
-                    string link;
-                    string state = null;
+                    string link = item.link;
+                    string state = item.state;
                     string pattern = null;
-                    bool? readOnly = null;
-                    string options = null;
-                    Brushes color = null;
-                    link = item.link;
-                    name = item.name;
-                    state = item.state;
+                    bool editable = item.editable;
+                    string type = item.type;
+                    string name = item.name;
+                    string label = item.label;
                     if(item.stateDescription != null && item.stateDescription.Contains("pattern"))
                     {
                         pattern = item.stateDescription.Split(':')[1].Split(',')[0].TrimStart('"').TrimEnd('"');
                     }
-                    ItemsDict.Add(name, new SensorValues(link, state, pattern, readOnly, options, name, color));
+                    ItemsDict.Add(name, new SensorValues(link, state, pattern, editable, type, name, label));
                 }
             }
         }
@@ -61,14 +52,10 @@ namespace APIDigger.Methods
             RestConn();
             foreach (Items item in OpenHABRest.ItemsList)
             {
-                if (item.name != "test" &&
-                    item.name != "zwave_device_93139763_node20_switch_dimmer1" &&
-                    item.name != "hue_scenes" )
+                if (!exclude.Contains(item.name))
                 {
-                    string name = null;
-                    string state = null;
-                    name = item.name;
-                    state = item.state;
+                    string name = item.name;
+                    string state = item.state;
                     if (ItemsDict[name].GetState() != state)
                     {
                         ItemsDict[name].SetState(state);
@@ -76,58 +63,42 @@ namespace APIDigger.Methods
                         {
                             if (dr["Name"].ToString() == ItemsDict[name].GetName())
                             {
-                                dr[1] = state;
-                                dr[2] = DateTime.Now.ToLongTimeString();
-
+                                dr[2] = state;
+                                dr[3] = DateTime.Now.ToLongTimeString();
                             }
-
                         }
                     }
                 }
             }
         }
 
-        public void PopulateDataTable(bool first = true)
+        public void PopulateDataTable()
         {
             ItemsTable.Clear();
-            if(first)
-            { 
-                ItemsTable.Columns.Add("Name");
-                ItemsTable.Columns.Add("State");
-                ItemsTable.Columns.Add("UpdateTime");
-            }
-            foreach (Items a in OpenHABRest.ItemsList)
+            ItemsTable.Columns.Add("Name");
+            ItemsTable.Columns.Add("Label");
+            ItemsTable.Columns.Add("State");
+            ItemsTable.Columns.Add("UpdateTime");
+            foreach (Items item in OpenHABRest.ItemsList)
             {
-                ItemsTable.Rows.Add(a.name, a.state, first ? DateTime.Now.ToLongTimeString() : "");
+                if(!exclude.Contains(item.name))
+                    ItemsTable.Rows.Add(item.name, item.label, item.state, DateTime.Now.ToLongTimeString());
             }
 
         }
-
-
 
         public static void RestConn()
         {
             OpenHABRest.ItemsList.Clear();
             var restClient = new RestClient("http://192.168.1.161:8082/");
-            var request = new RestRequest("rest/items/", Method.GET); 
+            var request = new RestRequest("rest/items/", Method.GET);
             var queryResult = restClient.Execute<List<Items>>(request).Data;
-            var test = request.Parameters;
-            foreach(Items a in queryResult)
+            //var queryResulStringt = restClient.Execute<List<string>>(request).Data;
+            foreach (Items item in queryResult)
             {
-                if (a.type != "Group")
-                    OpenHABRest.ItemsList.Add(a);
+                if (item.type != "Group")
+                    OpenHABRest.ItemsList.Add(item);
             }
         }
     }
-    public class Items
-    {
-        public string link { get; set; }
-        public string state { get; set; }
-        public string stateDescription { get; set; }
-        public string type { get; set; }
-        public string name { get; set; }
-        public string label { get; set; }
-
-    }
-
 }
