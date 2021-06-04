@@ -18,6 +18,7 @@ namespace APIDigger
         private readonly List<string> ItemMembers = new List<string>();
         private readonly List<string> Items = new List<string>();
         private readonly APILookup getData = new APILookup();
+        public static List<Items> ItemsList = new List<Items>();
         readonly List<string> ApiElements = new List<string>();
         private readonly Thread TableRefresh = null;
         public OpenHABRest()
@@ -25,6 +26,7 @@ namespace APIDigger
             InitializeComponent();
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
             Title = "Openhab REST Items";
+            APILookup.RestConn();
             Load();
             getData.PopulateDataTable();
             dgSensors.DataContext = getData.ItemsTable.AsDataView();
@@ -71,9 +73,9 @@ namespace APIDigger
             string[] APIElementsUnsorted = getData.OpenHab2Rest(url);
             API_Method_Extract(APIElementsUnsorted, type);
             if (!update)
-                getData.PopulateItemsDict(Items);
+                getData.PopulateItemsDict();
             else
-                getData.UpdateItemsDict(Items);
+                getData.UpdateItemsDict();
 
         }
 
@@ -82,7 +84,7 @@ namespace APIDigger
             ApiElements.Clear();
             getData.ItemsDict.Clear();
             Items.Clear();
-            API_Method_Call("http://192.168.1.151:8080/rest/items", "items");
+            API_Method_Call("http://192.168.1.161:8082/rest/items", "items");
         }
 
         void Update()
@@ -92,7 +94,7 @@ namespace APIDigger
                 try
                 {
                     Items.Clear();
-                    API_Method_Call("http://192.168.1.151:8080/rest/items", "items", true);
+                    API_Method_Call("http://192.168.1.161:8082/rest/items", "items", true);
                     dgSensors.Dispatcher.Invoke(() =>
                     {
                         if (dgSensors.IsKeyboardFocusWithin)

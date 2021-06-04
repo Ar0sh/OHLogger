@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RestSharp;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -27,13 +28,14 @@ namespace APIDigger.Methods
         public SortedDictionary<string, SensorValues> ItemsDict = new SortedDictionary<string, SensorValues>();
         public DataTable ItemsTable = new DataTable("Items");
 
-        public void PopulateItemsDict(List<string> list)
+        public void PopulateItemsDict()
         {
-            foreach(var element in list)
+            RestConn();
+            foreach (Items item in OpenHABRest.ItemsList)
             {
-                if (element.Contains("test") == false && 
-                    element.Contains("zwave_device_93139763_node20_switch_dimmer1") == false &&
-                    element.Contains("hue_scenes") == false)
+                if (item.name != "test" &&
+                    item.name != "zwave_device_93139763_node20_switch_dimmer1" &&
+                    item.name != "hue_scenes")
                 {
                     string name;
                     string link;
@@ -42,80 +44,90 @@ namespace APIDigger.Methods
                     bool? readOnly = null;
                     string options = null;
                     Brushes color = null;
-                    string[] chopped = element.Split(new char[] { ',', '/' },
-                                StringSplitOptions.RemoveEmptyEntries);
-                    link = chopped[0].Split(':')[1].TrimStart('"').TrimEnd('"') + "://" +
-                                  chopped[1].TrimStart('"').TrimEnd('"') + "/" +
-                                  chopped[2].TrimStart('"').TrimEnd('"') + "/" +
-                                  chopped[3].TrimStart('"').TrimEnd('"') + "/" +
-                                  chopped[4].TrimStart('"').TrimEnd('"');
-                    name = chopped[4].TrimEnd('"');
-                    for (int i = 5; i < chopped.Length; i++)
+                    link = item.link;
+                    name = item.name;
+                    state = item.state;
+                    if(item.stateDescription != null && item.stateDescription.Contains("pattern"))
                     {
-                        if (chopped[i].Contains("\"state\""))
-                        {
-                            state = chopped[i].Split(':')[1].TrimStart('"').TrimEnd('"');
-                        }
-                        else if (chopped[i].Contains("pattern\""))
-                        {
-                            if (chopped[i].Contains("stateDescription\""))
-                                pattern = chopped[i].Split(':')[2].TrimStart('"').TrimEnd('"');
-                        }
+                        pattern = item.stateDescription.Split(':')[1].Split(',')[0].TrimStart('"').TrimEnd('"');
                     }
                     ItemsDict.Add(name, new SensorValues(link, state, pattern, readOnly, options, name, color));
                 }
             }
         }
 
-        public void UpdateItemsDict(List<string> list)
+        public void UpdateItemsDict()
         {
-            foreach (var element in list)
+            RestConn();
+            foreach (Items item in OpenHABRest.ItemsList)
             {
-                if (element.Contains("test") == false &&
-                    element.Contains("zwave_device_93139763_node20_switch_dimmer1") == false &&
-                    element.Contains("hue_scenes") == false)
+                if (item.name != "test" &&
+                    item.name != "zwave_device_93139763_node20_switch_dimmer1" &&
+                    item.name != "hue_scenes" )
                 {
                     string name = null;
                     string state = null;
-                    string[] chopped = element.Split(new char[] { ',', '/' },
-                                StringSplitOptions.RemoveEmptyEntries);
-                    name = chopped[4].TrimEnd('"');
-                    for (int i = 5; i < chopped.Length; i++)
-                    {
-                        if (chopped[i].Contains("\"state\""))
-                        {
-                            state = chopped[i].Split(':')[1].TrimStart('"').TrimEnd('"');
-                        }
-                    }
+                    name = item.name;
+                    state = item.state;
                     if (ItemsDict[name].GetState() != state)
                     {
                         ItemsDict[name].SetState(state);
-                        foreach(DataRow dr in ItemsTable.Rows)
+                        foreach (DataRow dr in ItemsTable.Rows)
                         {
                             if (dr["Name"].ToString() == ItemsDict[name].GetName())
                             {
                                 dr[1] = state;
                                 dr[2] = DateTime.Now.ToLongTimeString();
-                                
+
                             }
-                                
+
                         }
                     }
                 }
             }
         }
 
-        public void PopulateDataTable()
+        public void PopulateDataTable(bool first = true)
         {
             ItemsTable.Clear();
-            ItemsTable.Columns.Add("Name");
-            ItemsTable.Columns.Add("State");
-            ItemsTable.Columns.Add("UpdateTime");
-            foreach (var t in ItemsDict)
+            if(first)
+            { 
+                ItemsTable.Columns.Add("Name");
+                ItemsTable.Columns.Add("State");
+                ItemsTable.Columns.Add("UpdateTime");
+            }
+            foreach (Items a in OpenHABRest.ItemsList)
             {
-                ItemsTable.Rows.Add(t.Key, t.Value.GetState(), DateTime.Now.ToLongTimeString());
+                ItemsTable.Rows.Add(a.name, a.state, first ? DateTime.Now.ToLongTimeString() : "");
             }
 
         }
+
+
+
+        public static void RestConn()
+        {
+            OpenHABRest.ItemsList.Clear();
+            var restClient = new RestClient("http://192.168.1.161:8082/");
+            var request = new RestRequest("rest/items/", Method.GET); 
+            var queryResult = restClient.Execute<List<Items>>(request).Data;
+            var test = request.Parameters;
+            foreach(Items a in queryResult)
+            {
+                if (a.type != "Group")
+                    OpenHABRest.ItemsList.Add(a);
+            }
+        }
     }
+    public class Items
+    {
+        public string link { get; set; }
+        public string state { get; set; }
+        public string stateDescription { get; set; }
+        public string type { get; set; }
+        public string name { get; set; }
+        public string label { get; set; }
+
+    }
+
 }
