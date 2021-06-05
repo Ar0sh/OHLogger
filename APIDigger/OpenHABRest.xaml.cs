@@ -23,8 +23,10 @@ namespace APIDigger
         readonly List<string> ApiElements = new List<string>();
         private Thread TableRefresh = null;
         public bool loggedIn = false;
-        CreateTable tables = new CreateTable();
-        CreateTable createTable = new CreateTable();
+        //DataSqlClasses tables = new DataSqlClasses();
+        DataSqlClasses dataSqlClasses = new DataSqlClasses();
+
+
         public OpenHABRest()
         {
             InitializeComponent();
@@ -34,15 +36,15 @@ namespace APIDigger
 
         void Run()
         {
-            APILookup.RestConn();
+            getData.RestConn();
             Load();
             getData.PopulateDataTable();
-            dgSensors.DataContext = getData.ItemsTable.AsDataView(); 
+            dgSensors.DataContext = getData.ItemsTable.AsDataView();
             foreach (Items item in ItemsList)
             {
-                if(!tables.Tables.Contains(item.name))
-                { 
-                    createTable.CreateTables(item.name);
+                if (!dataSqlClasses.Tables.Contains(item.name))
+                {
+                    dataSqlClasses.CreateTables(item.name, item.type);
                 }
             }
             if (getData.ItemsTable.Rows.Count > 0)
@@ -93,6 +95,10 @@ namespace APIDigger
                         else
                             dgSensors.Items.Refresh();
                     });
+                    foreach (Items item in ItemsList)
+                    {
+                        dataSqlClasses.StoreValuesToSql(item);
+                    }
                     Thread.Sleep(Properties.Settings.Default.UpdateInterval * 1000);
                 }
                 catch
@@ -124,7 +130,7 @@ namespace APIDigger
                 userSql.Background = Brushes.Green;
                 passSql.Background = Brushes.Green;
                 loggedIn = true;
-                tables.GetSqlTables();
+                dataSqlClasses.GetSqlTables();
                 conn.Close();
                 Run();
             }

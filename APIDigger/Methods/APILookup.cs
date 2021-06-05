@@ -87,7 +87,7 @@ namespace APIDigger.Methods
 
         }
 
-        public static void RestConn()
+        public void RestConn()
         {
             OpenHABRest.ItemsList.Clear();
             var restClient = new RestClient("http://192.168.1.161:8082/");
@@ -96,7 +96,7 @@ namespace APIDigger.Methods
             //var queryResulStringt = restClient.Execute<List<string>>(request).Data;
             foreach (Items item in queryResult)
             {
-                if (item.type != "Group")
+                if (item.type != "Group" && !exclude.Contains(item.name))
                     OpenHABRest.ItemsList.Add(item);
             }
         }

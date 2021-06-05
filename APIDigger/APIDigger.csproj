@@ -72,7 +72,7 @@
     </Compile>
     <Compile Include="Classes\Items.cs" />
     <Compile Include="Classes\ConSQL.cs" />
-    <Compile Include="Methods\CreateTable.cs" />
+    <Compile Include="Methods\DataSqlClasses.cs" />
     <Compile Include="Methods\Functions.cs" />
     <Compile Include="OpenHABRest.xaml.cs">
       <DependentUpon>OpenHABRest.xaml</DependentUpon>
