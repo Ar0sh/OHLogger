@@ -90,19 +90,19 @@ namespace APIDigger.Methods
             string cmd;
             if(item.type.ToLower() == "switch" || item.type.ToLower() == "color")
             {
-                cmd = "insert into " + item.name + " (time, value) values (CURRENT_TIMESTAMP, '" + item.state.Split(' ')[0] + "') ";
+                cmd = "insert into " + item.name + " (time, value) values (GETUTCDATE(), '" + item.state.Split(' ')[0] + "') ";
             }
             else if(item.type.ToLower() == "datetime")
             {
-                cmd = "insert into " + item.name + " (time, value) values (CURRENT_TIMESTAMP, '" + item.state.Split('+')[0] + "') ";
+                cmd = "insert into " + item.name + " (time, value) values (GETUTCDATE(), '" + item.state.Split('+')[0] + "') ";
             }
             else if(item.type.ToLower() == "string")
             {
-                cmd = "insert into " + item.name + " (time, value) values (CURRENT_TIMESTAMP, '" + item.state + "') ";
+                cmd = "insert into " + item.name + " (time, value) values (GETUTCDATE(), '" + item.state + "') ";
             }
             else
             { 
-                cmd = "insert into "+ item.name + " (time, value) values (CURRENT_TIMESTAMP, " + item.state.Split(' ')[0] + ") ";
+                cmd = "insert into "+ item.name + " (time, value) values (GETUTCDATE(), " + item.state.Split(' ')[0] + ") ";
             }
             conn.Open();
 
