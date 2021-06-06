@@ -7,6 +7,7 @@ using System.Data.SqlClient;
 using System.Data.Sql;
 using APIDigger.Classes;
 using System.Windows;
+using System.Windows.Media;
 
 namespace APIDigger.Methods
 {
@@ -18,8 +19,8 @@ namespace APIDigger.Methods
         {
             string ColTime = "time";
             string ColVal = "value"; 
-            string conStr = ConSQL.GetConnectionString_up();
-            SqlConnection conn = new SqlConnection(conStr);
+            //string conStr = ConSQL.GetConnectionString_up();
+            //SqlConnection conn = new SqlConnection(conStr);
             string cmd;
             if (type.ToLower() == "dimmer" || type.ToLower().Contains("number"))
             {
@@ -41,9 +42,9 @@ namespace APIDigger.Methods
             {
                 cmd = "CREATE TABLE [dbo].[" + name + "]([" + ColTime + "][datetime2](7) NULL,[" + ColVal + "] [nvarchar](50) NULL) ON[PRIMARY]";
             }
-            conn.Open();
+            OpenHABRest.conn.Open();
 
-            SqlCommand sqlCommand = new SqlCommand(cmd, conn);
+            SqlCommand sqlCommand = new SqlCommand(cmd, OpenHABRest.conn);
             try
             {
                 sqlCommand.ExecuteNonQuery();
@@ -54,18 +55,18 @@ namespace APIDigger.Methods
             }
             finally
             {
-                conn.Close();
+                OpenHABRest.conn.Close();
             }
         }
 
         public void GetSqlTables()
         {
-            string conStr = ConSQL.GetConnectionString_up();
-            SqlConnection conn = new SqlConnection(conStr);
+            //string conStr = ConSQL.GetConnectionString_up();
+            //SqlConnection conn = new SqlConnection(conStr);
             string cmd = "SELECT name FROM sys.Tables";
-            conn.Open();
+            OpenHABRest.conn.Open();
 
-            SqlCommand sqlCommand = new SqlCommand(cmd, conn);
+            SqlCommand sqlCommand = new SqlCommand(cmd, OpenHABRest.conn);
             try
             {
                 SqlDataReader rd = sqlCommand.ExecuteReader();
@@ -80,44 +81,49 @@ namespace APIDigger.Methods
             }
             finally
             {
-                conn.Close();
+                OpenHABRest.conn.Close();
             }
         }
-        public void StoreValuesToSql(Items item)
+        public void StoreValuesToSql()//Items item)
         {
-            string conStr = ConSQL.GetConnectionString_up();
-            SqlConnection conn = new SqlConnection(conStr);
-            string cmd;
-            if(item.type.ToLower() == "switch" || item.type.ToLower() == "color")
+            string query = "";
+            List<Items> ItemsListCopy = OpenHABRest.ItemsList.ToList();
+            foreach (Items item in ItemsListCopy)
             {
-                cmd = "insert into " + item.name + " (time, value) values (GETUTCDATE(), '" + item.state.Split(' ')[0] + "') ";
+                if (item.type.ToLower() == "switch" || item.type.ToLower() == "color")
+                {
+                    query += "insert into " + item.name + " (time, value) values (cast(getutcdate() as datetime2(3)), '" + item.state.Split(' ')[0] + "') \n";
+                }
+                else if (item.type.ToLower() == "datetime")
+                {
+                    query += "insert into " + item.name + " (time, value) values (cast(getutcdate() as datetime2(3)), '" + item.state.Split('+')[0] + "') \n";
+                }
+                else if (item.type.ToLower() == "string")
+                {
+                    query += "insert into " + item.name + " (time, value) values (cast(getutcdate() as datetime2(3)), '" + item.state + "') \n";
+                }
+                else
+                {
+                    query += "insert into " + item.name + " (time, value) values (cast(getutcdate() as datetime2(3)), " + item.state.Split(' ')[0] + ") \n";
+                }
             }
-            else if(item.type.ToLower() == "datetime")
-            {
-                cmd = "insert into " + item.name + " (time, value) values (GETUTCDATE(), '" + item.state.Split('+')[0] + "') ";
-            }
-            else if(item.type.ToLower() == "string")
-            {
-                cmd = "insert into " + item.name + " (time, value) values (GETUTCDATE(), '" + item.state + "') ";
-            }
-            else
-            { 
-                cmd = "insert into "+ item.name + " (time, value) values (GETUTCDATE(), " + item.state.Split(' ')[0] + ") ";
-            }
-            conn.Open();
+            OpenHABRest.conn.Open();
 
-            SqlCommand sqlCommand = new SqlCommand(cmd, conn);
+            SqlCommand sqlCommand = new SqlCommand(query, OpenHABRest.conn);
             try
             {
                 sqlCommand.ExecuteNonQuery();
             }
             catch
             {
-                MessageBox.Show("Error" + item.name + " " + item.state, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                //MessageBox.Show("Error" + item.name + " " + item.state, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                //OpenHABRest.ErrorMessages = "Error: Item: " + item.name + ", State: " + item.state;
+                OpenHABRest.ErrorColor = Brushes.Red;
+                OpenHABRest.ErrorCount += 1;
             }
             finally
             {
-                conn.Close();
+                OpenHABRest.conn.Close();
             }
         }
     }

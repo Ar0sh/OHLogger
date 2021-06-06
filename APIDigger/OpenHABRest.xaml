@@ -4,13 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:APIDigger"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
+        mc:Ignorable="d" 
+        Height="450" Width="800"
+        MinHeight="450" MinWidth="800"
         Closed="Window_Closed">
     <Grid>
-        <TextBox x:Name="tbStateValue" Margin="0,10,10,0" HorizontalAlignment="Right" Width="59" Height="23" VerticalAlignment="Top" Focusable="False"/>
         <DataGrid x:Name="dgSensors" 
-                  Margin="10,38,10,10"
+                  Margin="10,38,10,65"
                   ItemsSource="{Binding}" 
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
@@ -48,9 +48,21 @@
             </DataGrid.Columns>
         </DataGrid>
         <TextBox x:Name="userSql" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
-        <PasswordBox x:Name="passSql" HorizontalAlignment="Left" Height="23" Margin="140,10,0,0" VerticalAlignment="Top" Width="120"/>
+        <PasswordBox x:Name="passSql" KeyDown="passSql_KeyDown" HorizontalAlignment="Left" Height="23" Margin="140,10,0,0" VerticalAlignment="Top" Width="120"/>
         <Button x:Name="btnSqlLogin" Content="Login" HorizontalAlignment="Left" Margin="270,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="BtnLogInSql_Click"/>
-        <TextBox x:Name="tbUpdateSpeed" HorizontalAlignment="Left" Height="23" Margin="518,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" PreviewTextInput="TbUpdateSpeed_PreviewTextInput"/>
-        <Button x:Name="btnReloadUpd" Content="Apply" HorizontalAlignment="Left" Margin="643,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="BtnReloadUpd_Click"/>
+        <TextBox x:Name="tbUpdateSpeed" Height="23" Margin="0,10,90,0" TextWrapping="Wrap" VerticalAlignment="Top" PreviewTextInput="TbUpdateSpeed_PreviewTextInput" HorizontalAlignment="Right" Width="120"/>
+        <Button x:Name="btnReloadUpd" Content="Apply" Margin="0,10,10,0" VerticalAlignment="Top" Height="23" Click="BtnReloadUpd_Click" HorizontalAlignment="Right" Width="75"/>
+        <StatusBar x:Name="statusBar" Height="25" VerticalAlignment="Bottom">
+            <StatusBarItem x:Name="statSqlConItem" Background="Red" VerticalAlignment="Center" Margin="10, 0, 0, 0">
+                <TextBlock x:Name="statSqlCon" Text="Sql Not Connected" TextAlignment="Center"
+                           FontWeight="Bold" />
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem x:Name="statStatusItem" Background="Green" VerticalAlignment="Center" 
+                           HorizontalAlignment="Right" Margin="0, 0, 10, 0" HorizontalContentAlignment="Right">
+                <TextBlock x:Name="statStatus" Text="Status: OK" TextAlignment="Center"
+                           FontWeight="Bold" />
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>

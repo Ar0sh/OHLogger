@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -22,9 +23,15 @@ namespace APIDigger
         public static List<Items> ItemsList = new List<Items>();
         readonly List<string> ApiElements = new List<string>();
         private Thread TableRefresh = null;
+        private Thread SqlStoreTask = null;
         public bool loggedIn = false;
         //DataSqlClasses tables = new DataSqlClasses();
         DataSqlClasses dataSqlClasses = new DataSqlClasses();
+        public static string conStr;
+        public static SqlConnection conn;
+        public static string ErrorMessages = "Status = OK";
+        public static Brush ErrorColor = Brushes.Green;
+        public static int ErrorCount = 0;
 
 
         public OpenHABRest()
@@ -49,13 +56,14 @@ namespace APIDigger
             }
             if (getData.ItemsTable.Rows.Count > 0)
             {
-                tbStateValue.Background = Brushes.Green;
                 TableRefresh = new Thread(Update);
                 TableRefresh.Start();
+                SqlStoreTask = new Thread(StoreSqlCall);
+                SqlStoreTask.Start();
             }
             else
             {
-                tbStateValue.Background = Brushes.Red;
+
             }
             
         }
@@ -77,6 +85,16 @@ namespace APIDigger
             API_UpdateDict();
         }
 
+        void StoreSqlCall()
+        {
+            while(SqlStoreTask.IsAlive)
+            {
+                dataSqlClasses.StoreValuesToSql();
+                ErrorCount = 0;
+                Thread.Sleep(10000);
+            }
+        }
+
         void Update()
         {
             while(TableRefresh.IsAlive)
@@ -95,10 +113,19 @@ namespace APIDigger
                         else
                             dgSensors.Items.Refresh();
                     });
-                    foreach (Items item in ItemsList)
+                    statStatus.Dispatcher.Invoke(() =>
                     {
-                        dataSqlClasses.StoreValuesToSql(item);
-                    }
+                        statStatus.Text = "Number of errors: " + ErrorCount;
+                        if (ErrorCount > 0)
+                        {
+                            statStatusItem.Background = ErrorColor;
+                        }
+                        else
+                        {
+                            statStatusItem.Background = Brushes.Green;
+                        }
+
+                    });
                     Thread.Sleep(Properties.Settings.Default.UpdateInterval * 1000);
                 }
                 catch
@@ -119,19 +146,22 @@ namespace APIDigger
 
         private void BtnLogInSql_Click(object sender, RoutedEventArgs e)
         {
-            Functions.SaveSqlUser(userSql.Text, passSql.Password);
-            string conStr = ConSQL.GetConnectionString_up();
-            SqlConnection conn = new SqlConnection(conStr);
+            Functions.SaveSqlUser(userSql.Text, passSql.Password); 
+            
             try
             {
+                conStr = ConSQL.GetConnectionString_up();
+                conn = new SqlConnection(conStr);
                 conn.Open();
                 userSql.IsEnabled = false;
                 passSql.IsEnabled = false;
                 userSql.Background = Brushes.Green;
                 passSql.Background = Brushes.Green;
                 loggedIn = true;
-                dataSqlClasses.GetSqlTables();
                 conn.Close();
+                dataSqlClasses.GetSqlTables();
+                statSqlCon.Text = "Sql Connected";
+                statSqlConItem.Background = Brushes.Green;
                 Run();
             }
             catch
@@ -149,8 +179,20 @@ namespace APIDigger
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            if(loggedIn)
+            if (loggedIn)
+            {
                 TableRefresh.Abort();
+                SqlStoreTask.Abort();
+                conn.Close();
+            }
+        }
+
+        private void passSql_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.Key == Key.Enter || e.Key == Key.Return)
+            {
+                btnSqlLogin.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            }
         }
     }
 }
