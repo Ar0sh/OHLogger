@@ -10,9 +10,9 @@ using System.Windows;
 [assembly: AssemblyTitle("APIDigger")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Fulrix")]
 [assembly: AssemblyProduct("APIDigger")]
-[assembly: AssemblyCopyright("Copyright ©  2020")]
+[assembly: AssemblyCopyright("Copyright Frode Ulriksen ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
