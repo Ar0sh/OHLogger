@@ -93,7 +93,6 @@ namespace APIDigger.Methods
             var restClient = new RestClient("http://192.168.1.161:8082/");
             var request = new RestRequest("rest/items/", Method.GET);
             var queryResult = restClient.Execute<List<Items>>(request).Data;
-            //var queryResulStringt = restClient.Execute<List<string>>(request).Data;
             foreach (Items item in queryResult)
             {
                 if (item.type != "Group" && !exclude.Contains(item.name))

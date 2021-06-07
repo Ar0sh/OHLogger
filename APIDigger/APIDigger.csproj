@@ -35,7 +35,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>TextTemplate.ico</ApplicationIcon>
+    <ApplicationIcon>Icon\ApiDigger.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="RestSharp, Version=106.11.7.0, Culture=neutral, PublicKeyToken=598062e77f915f75, processorArchitecture=MSIL">
@@ -110,6 +110,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="TextTemplate.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icon\ApiDigger.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

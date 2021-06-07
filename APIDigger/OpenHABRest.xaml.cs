@@ -91,7 +91,7 @@ namespace APIDigger
             {
                 dataSqlClasses.StoreValuesToSql();
                 ErrorCount = 0;
-                Thread.Sleep(10000);
+                Thread.Sleep(59200);
             }
         }
 

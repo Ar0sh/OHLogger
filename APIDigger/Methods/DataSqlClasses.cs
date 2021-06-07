@@ -86,25 +86,25 @@ namespace APIDigger.Methods
         }
         public void StoreValuesToSql()//Items item)
         {
-            string query = "";
+            string query = "DECLARE @Time AS DATETIME2(3)\nSET @Time = GETUTCDATE()\n";
             List<Items> ItemsListCopy = OpenHABRest.ItemsList.ToList();
             foreach (Items item in ItemsListCopy)
             {
                 if (item.type.ToLower() == "switch" || item.type.ToLower() == "color")
                 {
-                    query += "insert into " + item.name + " (time, value) values (cast(getutcdate() as datetime2(3)), '" + item.state.Split(' ')[0] + "') \n";
+                    query += "insert into " + item.name + " (time, value) values (@Time, '" + item.state.Split(' ')[0] + "') \n";
                 }
                 else if (item.type.ToLower() == "datetime")
                 {
-                    query += "insert into " + item.name + " (time, value) values (cast(getutcdate() as datetime2(3)), '" + item.state.Split('+')[0] + "') \n";
+                    query += "insert into " + item.name + " (time, value) values (@Time, '" + item.state.Split('+')[0] + "') \n";
                 }
                 else if (item.type.ToLower() == "string")
                 {
-                    query += "insert into " + item.name + " (time, value) values (cast(getutcdate() as datetime2(3)), '" + item.state + "') \n";
+                    query += "insert into " + item.name + " (time, value) values (@Time, '" + item.state + "') \n";
                 }
                 else
                 {
-                    query += "insert into " + item.name + " (time, value) values (cast(getutcdate() as datetime2(3)), " + item.state.Split(' ')[0] + ") \n";
+                    query += "insert into " + item.name + " (time, value) values (@Time, " + item.state.Split(' ')[0] + ") \n";
                 }
             }
             OpenHABRest.conn.Open();
