@@ -64,7 +64,7 @@ namespace APIDigger.Methods
                             if (dr["Name"].ToString() == ItemsDict[name].GetName())
                             {
                                 dr[2] = state;
-                                dr[3] = DateTime.Now.ToLongTimeString();
+                                dr[3] = DateTime.Now;
                             }
                         }
                     }
@@ -82,7 +82,7 @@ namespace APIDigger.Methods
             foreach (Items item in OpenHABRest.ItemsList)
             {
                 if(!exclude.Contains(item.name))
-                    ItemsTable.Rows.Add(item.name, item.label, item.state, DateTime.Now.ToLongTimeString());
+                    ItemsTable.Rows.Add(item.name, item.label, item.state, DateTime.Now);
             }
 
         }

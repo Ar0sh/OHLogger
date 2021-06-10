@@ -39,7 +39,7 @@
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Last Update" IsReadOnly="True" Width="75" Binding="{Binding UpdateTime}">
+                <DataGridTextColumn Header="Last Update" IsReadOnly="True" Width="150" Binding="{Binding UpdateTime}">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Center"/>
