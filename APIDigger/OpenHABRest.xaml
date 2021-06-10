@@ -17,6 +17,11 @@
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
                   CanUserReorderColumns="False">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Link" Click="MenuItem_Click"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name" IsReadOnly="True" Width="*" Binding="{Binding Name}">
                     <DataGridTextColumn.ElementStyle>
