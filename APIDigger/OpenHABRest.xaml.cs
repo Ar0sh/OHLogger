@@ -107,7 +107,7 @@ namespace APIDigger
                     statSqlCon.Text = SqlMessages;
                     statSqlConItem.Background = SqlColor;
                 });
-                Thread.Sleep(9200);
+                Thread.Sleep(59200);
             }
         }
 
