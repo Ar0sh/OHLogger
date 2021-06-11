@@ -26,10 +26,12 @@ namespace APIDigger.Methods
             Properties.Settings.Default.UpdateInterval = Convert.ToInt32(input);
             Properties.Settings.Default.Save();
         }
-        public static void SaveSqlUser(string user, string pass)
+        public static void SaveSqlUser(string user, string pass, bool? save)
         {
             Properties.Settings.Default.UserSql = user;
             Properties.Settings.Default.PassSql = pass;
+            if (save == true)
+                Properties.Settings.Default.Save();
         }
     }
 }

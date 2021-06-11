@@ -54,21 +54,23 @@
             </DataGrid.Columns>
         </DataGrid>
         <TextBox x:Name="userSql" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
-        <PasswordBox x:Name="passSql" KeyDown="passSql_KeyDown" HorizontalAlignment="Left" Height="23" Margin="140,10,0,0" VerticalAlignment="Top" Width="120"/>
-        <Button x:Name="btnSqlLogin" Content="Login" HorizontalAlignment="Left" Margin="270,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="BtnLogInSql_Click"/>
+        <PasswordBox x:Name="passSql" KeyDown="PassSql_KeyDown" HorizontalAlignment="Left" Height="23" Margin="140,10,0,0" VerticalAlignment="Top" Width="120"/>
+        <Button x:Name="btnSqlLogin" Content="Log In" HorizontalAlignment="Left" Margin="270,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="BtnLogInSql_Click"/>
         <TextBox x:Name="tbUpdateSpeed" Height="23" Margin="0,10,90,0" TextWrapping="Wrap" VerticalAlignment="Top" PreviewTextInput="TbUpdateSpeed_PreviewTextInput" HorizontalAlignment="Right" Width="120"/>
         <Button x:Name="btnReloadUpd" Content="Apply" Margin="0,10,10,0" VerticalAlignment="Top" Height="23" Click="BtnReloadUpd_Click" HorizontalAlignment="Right" Width="75"/>
         <StatusBar x:Name="statusBar" Height="25" VerticalAlignment="Bottom">
             <StatusBarItem x:Name="statSqlConItem" Background="Red" VerticalAlignment="Center" Margin="10, 0, 0, 0">
-                <TextBlock x:Name="statSqlCon" Text="Sql Not Connected" TextAlignment="Center"
+                <TextBlock x:Name="statSqlCon" TextAlignment="Center"
                            FontWeight="Bold" />
             </StatusBarItem>
             <Separator />
-            <StatusBarItem x:Name="statStatusItem" Background="Green" VerticalAlignment="Center" 
+            <StatusBarItem x:Name="statApiConItem" Background="Red" VerticalAlignment="Center" 
                            HorizontalAlignment="Right" Margin="0, 0, 10, 0" HorizontalContentAlignment="Right">
-                <TextBlock x:Name="statStatus" Text="Status: OK" TextAlignment="Center"
+                <TextBlock x:Name="statApiCon" TextAlignment="Center"
                            FontWeight="Bold" />
             </StatusBarItem>
         </StatusBar>
+        <Button x:Name="btnSqlLogout" Content="Log Out" HorizontalAlignment="Left" Margin="350,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="BtnSqlLogout_Click"/>
+        <CheckBox x:Name="chkRemember" Content="Remember" HorizontalAlignment="Left" Margin="430,15,0,0" VerticalAlignment="Top" Checked="ChkRemember_Checked" Unchecked="ChkRemember_Unchecked"/>
     </Grid>
 </Window>

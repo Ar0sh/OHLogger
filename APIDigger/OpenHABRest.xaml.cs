@@ -28,19 +28,29 @@ namespace APIDigger
         private Thread SqlStoreTask = null;
         public bool loggedIn = false;
         //DataSqlClasses tables = new DataSqlClasses();
-        DataSqlClasses dataSqlClasses = new DataSqlClasses();
+        readonly DataSqlClasses dataSqlClasses = new DataSqlClasses();
         public static string conStr;
         public static SqlConnection conn;
-        public static string ErrorMessages = "Status = OK";
-        public static Brush ErrorColor = Brushes.Green;
-        public static int ErrorCount = 0;
+        public static string ApiMessages = "Api Connected";
+        public static Brush ApiColor = Brushes.Green;
+        public static string SqlMessages = "Sql Connected";
+        public static Brush SqlColor = Brushes.Green;
 
 
         public OpenHABRest()
         {
             InitializeComponent();
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
-            Title = "Openhab REST Items";
+            statSqlCon.Text = SqlMessages;
+            statApiCon.Text = ApiMessages;
+            Title = "Openhab REST Items"; 
+            if (Properties.Settings.Default.RememberLogin)
+            {
+                userSql.Text = Properties.Settings.Default.UserSql;
+                passSql.Password = Properties.Settings.Default.PassSql;
+                chkRemember.IsChecked = true;
+                BtnLogInSql_Click(null, null);
+            }
         }
 
         void Run()
@@ -92,8 +102,12 @@ namespace APIDigger
             while(SqlStoreTask.IsAlive)
             {
                 dataSqlClasses.StoreValuesToSql();
-                ErrorCount = 0;
-                Thread.Sleep(59200);
+                statSqlCon.Dispatcher.Invoke(() =>
+                {
+                    statSqlCon.Text = SqlMessages;
+                    statSqlConItem.Background = SqlColor;
+                });
+                Thread.Sleep(9200);
             }
         }
 
@@ -115,17 +129,10 @@ namespace APIDigger
                         else
                             dgSensors.Items.Refresh();
                     });
-                    statStatus.Dispatcher.Invoke(() =>
+                    statApiCon.Dispatcher.Invoke(() =>
                     {
-                        statStatus.Text = "Number of errors: " + ErrorCount;
-                        if (ErrorCount > 0)
-                        {
-                            statStatusItem.Background = ErrorColor;
-                        }
-                        else
-                        {
-                            statStatusItem.Background = Brushes.Green;
-                        }
+                        statApiCon.Text = ApiMessages; ;
+                        statApiConItem.Background = ApiColor;
 
                     });
                     Thread.Sleep(Properties.Settings.Default.UpdateInterval * 1000);
@@ -148,7 +155,7 @@ namespace APIDigger
 
         private void BtnLogInSql_Click(object sender, RoutedEventArgs e)
         {
-            Functions.SaveSqlUser(userSql.Text, passSql.Password); 
+            Functions.SaveSqlUser(userSql.Text, passSql.Password, chkRemember.IsChecked); 
             
             try
             {
@@ -162,8 +169,8 @@ namespace APIDigger
                 loggedIn = true;
                 conn.Close();
                 dataSqlClasses.GetSqlTables();
-                statSqlCon.Text = "Sql Connected";
-                statSqlConItem.Background = Brushes.Green;
+                statSqlCon.Text = SqlMessages;
+                statSqlConItem.Background = SqlColor;
                 Run();
             }
             catch
@@ -185,11 +192,17 @@ namespace APIDigger
             {
                 TableRefresh.Abort();
                 SqlStoreTask.Abort();
+                if(chkRemember.IsChecked == false)
+                {
+                    Properties.Settings.Default.UserSql = "";
+                    Properties.Settings.Default.PassSql = "";
+                    Properties.Settings.Default.Save();
+                }
                 conn.Close();
             }
         }
 
-        private void passSql_KeyDown(object sender, KeyEventArgs e)
+        private void PassSql_KeyDown(object sender, KeyEventArgs e)
         {
             if(e.Key == Key.Enter || e.Key == Key.Return)
             {
@@ -201,6 +214,43 @@ namespace APIDigger
         {
             TextBlock content = (TextBlock)dgSensors.SelectedCells[0].Column.GetCellContent(dgSensors.SelectedCells[0].Item);
             Process.Start("http://192.168.1.161:8082/rest/items/" + content.Text);
+        }
+
+        private void BtnSqlLogout_Click(object sender, RoutedEventArgs e)
+        {
+            if (loggedIn)
+            {
+                TableRefresh.Abort();
+                SqlStoreTask.Abort(); 
+                userSql.IsEnabled = true;
+                passSql.IsEnabled = true;
+                if (!Properties.Settings.Default.RememberLogin)
+                {
+                    userSql.Text = "";
+                    passSql.Password = "";
+                }
+                userSql.Background = Brushes.White;
+                passSql.Background = Brushes.White;
+                statSqlCon.Text = "Sql Disconnected";
+                statSqlConItem.Background = Brushes.Red;
+                statApiCon.Text = "Api Disconnected";
+                statApiConItem.Background = Brushes.Red;
+                getData.ItemsTable.Clear();
+                loggedIn = false;
+            }
+        }
+
+        private void ChkRemember_Checked(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.RememberLogin = true;
+            Properties.Settings.Default.Save();
+
+        }
+
+        private void ChkRemember_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.RememberLogin = false;
+            Properties.Settings.Default.Save();
         }
     }
 }

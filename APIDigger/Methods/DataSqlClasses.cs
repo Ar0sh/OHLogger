@@ -107,19 +107,27 @@ namespace APIDigger.Methods
                     query += "insert into " + item.name + " (time, value) values (@Time, " + item.state.Split(' ')[0] + ") \n";
                 }
             }
-            OpenHABRest.conn.Open();
 
             SqlCommand sqlCommand = new SqlCommand(query, OpenHABRest.conn);
             try
             {
+                OpenHABRest.conn.Open();
                 sqlCommand.ExecuteNonQuery();
+                if(OpenHABRest.SqlColor != Brushes.Green)
+                {
+                    OpenHABRest.SqlColor = Brushes.Green;
+                    OpenHABRest.SqlMessages = "Sql Connected";
+                }
             }
             catch
             {
                 //MessageBox.Show("Error" + item.name + " " + item.state, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 //OpenHABRest.ErrorMessages = "Error: Item: " + item.name + ", State: " + item.state;
-                OpenHABRest.ErrorColor = Brushes.Red;
-                OpenHABRest.ErrorCount += 1;
+                if (OpenHABRest.SqlColor != Brushes.Red)
+                {
+                    OpenHABRest.SqlColor = Brushes.Red;
+                    OpenHABRest.SqlMessages = "Sql Disconnected";
+                }
             }
             finally
             {

@@ -75,10 +75,13 @@ namespace APIDigger.Methods
         public void PopulateDataTable()
         {
             ItemsTable.Clear();
-            ItemsTable.Columns.Add("Name");
-            ItemsTable.Columns.Add("Label");
-            ItemsTable.Columns.Add("State");
-            ItemsTable.Columns.Add("UpdateTime");
+            if(ItemsTable.Columns.Count == 0)
+            { 
+                ItemsTable.Columns.Add("Name");
+                ItemsTable.Columns.Add("Label");
+                ItemsTable.Columns.Add("State");
+                ItemsTable.Columns.Add("UpdateTime");
+            }
             foreach (Items item in OpenHABRest.ItemsList)
             {
                 if(!exclude.Contains(item.name))
@@ -93,10 +96,26 @@ namespace APIDigger.Methods
             var restClient = new RestClient("http://192.168.1.161:8082/");
             var request = new RestRequest("rest/items/", Method.GET);
             var queryResult = restClient.Execute<List<Items>>(request).Data;
-            foreach (Items item in queryResult)
+            if(queryResult != null)
             {
-                if (item.type != "Group" && !exclude.Contains(item.name))
-                    OpenHABRest.ItemsList.Add(item);
+                foreach (Items item in queryResult)
+                {
+                    if (item.type != "Group" && !exclude.Contains(item.name))
+                        OpenHABRest.ItemsList.Add(item);
+                }
+                if(OpenHABRest.ApiColor != Brushes.Green)
+                { 
+                    OpenHABRest.ApiColor = Brushes.Green;
+                    OpenHABRest.ApiMessages = "Api Connected";
+                }
+            }
+            else
+            {
+                if(OpenHABRest.ApiColor != Brushes.Red)
+                { 
+                    OpenHABRest.ApiColor = Brushes.Red;
+                    OpenHABRest.ApiMessages = "Api Disconnected";
+                }
             }
         }
     }
