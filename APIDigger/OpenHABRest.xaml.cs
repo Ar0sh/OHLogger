@@ -145,7 +145,7 @@ namespace APIDigger
                     statSqlErr.Text = SqlErrMessage;
                     statSqlErrItem.Background = SqlErrColor;
                 });
-                Thread.Sleep(9200);
+                Thread.Sleep(59200);
             }
         }
 
