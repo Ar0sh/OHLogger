@@ -11,7 +11,7 @@
         Icon="Icon/ApiDigger.ico">
     <Grid>
         <DataGrid x:Name="dgSensors" 
-                  Margin="10,38,10,65"
+                  Margin="10,156,10,30"
                   ItemsSource="{Binding}" 
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
@@ -53,9 +53,6 @@
                 </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
-        <TextBox x:Name="userSql" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
-        <PasswordBox x:Name="passSql" KeyDown="PassSql_KeyDown" HorizontalAlignment="Left" Height="23" Margin="140,10,0,0" VerticalAlignment="Top" Width="120"/>
-        <Button x:Name="btnSqlLogin" Content="Log In" HorizontalAlignment="Left" Margin="270,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="BtnLogInSql_Click"/>
         <TextBox x:Name="tbUpdateSpeed" Height="23" Margin="0,10,90,0" TextWrapping="Wrap" VerticalAlignment="Top" PreviewTextInput="TbUpdateSpeed_PreviewTextInput" HorizontalAlignment="Right" Width="120"/>
         <Button x:Name="btnReloadUpd" Content="Apply" Margin="0,10,10,0" VerticalAlignment="Top" Height="23" Click="BtnReloadUpd_Click" HorizontalAlignment="Right" Width="75"/>
         <StatusBar x:Name="statusBar" Height="25" VerticalAlignment="Bottom">
@@ -74,6 +71,26 @@
                 <TextBlock x:Name="statApiCon" TextAlignment="Center" FontWeight="Bold" />
             </StatusBarItem>
         </StatusBar>
-        <CheckBox x:Name="chkRemember" Content="Remember" HorizontalAlignment="Left" Margin="350,15,0,0" VerticalAlignment="Top" Checked="ChkRemember_Checked" Unchecked="ChkRemember_Unchecked"/>
+        <GroupBox Header="SQL Input" HorizontalAlignment="Left" Height="150" Margin="10,1,0,0" VerticalAlignment="Top" Width="303">
+            <Grid>
+                <Label Content="Server IP:Port" HorizontalAlignment="Left" Margin="10,9,0,0" VerticalAlignment="Top"/>
+                <TextBox x:Name="tbSqlIp" HorizontalAlignment="Left" Height="23" Margin="96,10,0,0" TextWrapping="NoWrap" 
+                         VerticalAlignment="Top" Width="185" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                <Label Content="Db Name" HorizontalAlignment="Left" Margin="10,37,0,0" VerticalAlignment="Top"/>
+                <TextBox x:Name="tbDatabaseName" HorizontalAlignment="Left" Height="23" Margin="96,38,0,0" TextWrapping="NoWrap" 
+                         VerticalAlignment="Top" Width="185" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                <Label Content="User" HorizontalAlignment="Left" Margin="10,65,0,0" VerticalAlignment="Top"/>
+                <TextBox x:Name="userSql" HorizontalAlignment="Left" Height="23" Margin="96,66,0,0" TextWrapping="NoWrap" 
+                         VerticalAlignment="Top" Width="100" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                <Label Content="Password" HorizontalAlignment="Left" Margin="10,93,0,0" VerticalAlignment="Top"/>
+                <PasswordBox x:Name="passSql" KeyDown="PassSql_KeyDown" HorizontalAlignment="Left" Margin="96,94,0,0" 
+                     Width="100" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Height="23" VerticalAlignment="Top"/>
+                <Button x:Name="btnSqlLogin" Content="Connect" HorizontalAlignment="Left" Margin="201,94,0,0" 
+                        VerticalAlignment="Top" Width="80" Height="23" Click="BtnLogInSql_Click"/>
+                <CheckBox x:Name="chkRemember" Content="Remember" HorizontalAlignment="Left" Margin="201,71,0,0" 
+                          VerticalAlignment="Top" Checked="ChkRemember_Checked" Unchecked="ChkRemember_Unchecked" Width="80"/>
+
+            </Grid>
+        </GroupBox>
     </Grid>
 </Window>

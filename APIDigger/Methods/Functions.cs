@@ -26,8 +26,19 @@ namespace APIDigger.Methods
             Properties.Settings.Default.UpdateInterval = Convert.ToInt32(input);
             Properties.Settings.Default.Save();
         }
-        public static void SaveSqlUser(string user, string pass, bool? save)
+        public static void SaveSqlUser(string sqlip, string sqldbname, string user, string pass, bool? save)
         {
+            if (sqlip.Contains(":"))
+            {
+                Properties.Settings.Default.SqlIpAddr = sqlip.Split(':')[0];
+                Properties.Settings.Default.SqlPort = sqlip.Split(':')[1];
+            }
+            else
+            {
+                Properties.Settings.Default.SqlIpAddr = sqlip;
+                Properties.Settings.Default.SqlPort = "";
+            }
+            Properties.Settings.Default.SqlDbName = sqldbname;
             Properties.Settings.Default.UserSql = user;
             Properties.Settings.Default.PassSql = pass;
             if (save == true)

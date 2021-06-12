@@ -70,5 +70,41 @@ namespace APIDigger.Properties {
                 this["RememberLogin"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SqlIpAddr {
+            get {
+                return ((string)(this["SqlIpAddr"]));
+            }
+            set {
+                this["SqlIpAddr"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SqlDbName {
+            get {
+                return ((string)(this["SqlDbName"]));
+            }
+            set {
+                this["SqlDbName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SqlPort {
+            get {
+                return ((string)(this["SqlPort"]));
+            }
+            set {
+                this["SqlPort"] = value;
+            }
+        }
     }
 }

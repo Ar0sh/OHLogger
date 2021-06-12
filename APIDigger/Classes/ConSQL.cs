@@ -9,15 +9,16 @@ namespace APIDigger.Classes
     internal class ConSQL
     {
 		// Get the connection string from App config file.
-		protected static internal string GetConnectionString()
-		{
-			string connString = "Server=192.168.1.161; database=OpenHAB; UID=openhab; password=567814";
-			return connString;
-		}
 		protected static internal string GetConnectionString_up()
 		{
-			string connString = "Server=192.168.1.161; database=OpenHAB; UID=" + Properties.Settings.Default.UserSql + 
-								"; password=" + Properties.Settings.Default.PassSql;
+			string connString;
+			if (Properties.Settings.Default.SqlPort != "")
+				connString = "Server=" + Properties.Settings.Default.SqlIpAddr + "," + Properties.Settings.Default.SqlPort + 
+					"; database=" + Properties.Settings.Default.SqlDbName + "; UID=" + Properties.Settings.Default.UserSql + "; password=" + 
+					Properties.Settings.Default.PassSql;
+			else
+				connString = "Server=" + Properties.Settings.Default.SqlIpAddr + "; database=" + Properties.Settings.Default.SqlDbName + "; UID=" + 
+					Properties.Settings.Default.UserSql +  "; password=" + Properties.Settings.Default.PassSql;
 			return connString;
 		}
 	}

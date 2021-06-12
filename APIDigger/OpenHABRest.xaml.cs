@@ -7,7 +7,9 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -30,30 +32,85 @@ namespace APIDigger
         public static List<Items> ItemsList = new List<Items>();
         public static string conStr;
         public static SqlConnection conn;
-        public static string ApiMessages = "API Connected";
-        public static Brush ApiColor = Brushes.Green;
-        public static string SqlMessages = "SQL Connected";
-        public static Brush SqlColor = Brushes.Green;
+        public static string ApiMessages = "API Disconnected";
+        public static Brush ApiColor = Brushes.Red;
+        public static string SqlMessages = "SQL Disconnected";
+        public static Brush SqlColor = Brushes.Red;
         public static string SqlErrMessage = "No SQL Errors";
         public static Brush SqlErrColor = Brushes.Green;
         public static string SqlTabMessage = "";
-        public static Brush SqlTabColor = Brushes.Green;
+        public static Brush SqlTabColor = Brushes.Red;
 
 
         public OpenHABRest()
         {
             InitializeComponent();
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
-            statSqlCon.Text = SqlMessages;
-            statApiCon.Text = ApiMessages;
-            statSqlErr.Text = SqlErrMessage;
+            UpdateGui(true, true, true);
             Title = "Openhab REST Items"; 
             if (Properties.Settings.Default.RememberLogin)
             {
                 userSql.Text = Properties.Settings.Default.UserSql;
                 passSql.Password = Properties.Settings.Default.PassSql;
+                tbSqlIp.Text = Properties.Settings.Default.SqlIpAddr;
+                if (Properties.Settings.Default.SqlPort != "")
+                    tbSqlIp.Text += ":" + Properties.Settings.Default.SqlPort;
+                tbDatabaseName.Text = Properties.Settings.Default.SqlDbName;
                 chkRemember.IsChecked = true;
                 BtnLogInSql_Click(null, null);
+            }
+        }
+
+        void UpdateGui(bool _Sql, bool _Api = false, bool _Err = false)
+        {
+            if(_Sql)
+            { 
+                statSqlCon.Text = SqlMessages;
+                statSqlConItem.Background = SqlColor;
+            }
+            if (_Api)
+            { 
+                statApiCon.Text = ApiMessages;
+                statApiConItem.Background = ApiColor;
+            }
+            if (_Err)
+            { 
+                statSqlErr.Text = SqlErrMessage;
+                statSqlErrItem.Background = SqlErrColor;
+            }
+        }
+
+        void UpdateSqlUserPass(bool? _LoggedIn)
+        {
+            if(_LoggedIn == true)
+            { 
+                userSql.IsEnabled = false;
+                passSql.IsEnabled = false;
+                tbSqlIp.IsEnabled = false;
+                tbDatabaseName.IsEnabled = false;
+                userSql.Background = Brushes.Green;
+                passSql.Background = Brushes.Green;
+            }
+            else if (_LoggedIn == false)
+            { 
+                userSql.Text = "";
+                passSql.Password = "";
+                userSql.Background = Brushes.Red;
+                passSql.Background = Brushes.Red;
+            }
+            else
+            {
+                userSql.IsEnabled = true;
+                passSql.IsEnabled = true;
+                tbSqlIp.IsEnabled = true;
+                tbDatabaseName.IsEnabled = true;
+                if (!Properties.Settings.Default.RememberLogin)
+                {
+                    userSql.Text = "";
+                    passSql.Password = "";
+                }
+                userSql.Background = Brushes.White;
+                passSql.Background = Brushes.White;
             }
         }
 
@@ -111,8 +168,7 @@ namespace APIDigger
                     });
                     statApiCon.Dispatcher.Invoke(() =>
                     {
-                        statApiCon.Text = ApiMessages; ;
-                        statApiConItem.Background = ApiColor;
+                        UpdateGui(false, true, false);
 
                     });
                     Thread.Sleep(Properties.Settings.Default.UpdateInterval * 1000);
@@ -140,10 +196,7 @@ namespace APIDigger
                 dataSqlClasses.StoreValuesToSql();
                 statSqlCon.Dispatcher.Invoke(() =>
                 {
-                    statSqlCon.Text = SqlMessages;
-                    statSqlConItem.Background = SqlColor;
-                    statSqlErr.Text = SqlErrMessage;
-                    statSqlErrItem.Background = SqlErrColor;
+                    UpdateGui(true, false, true);
                 });
                 Thread.Sleep(59200);
             }
@@ -153,33 +206,23 @@ namespace APIDigger
         {
             if(LogIn)
             {
-                Functions.SaveSqlUser(userSql.Text, passSql.Password, chkRemember.IsChecked);
-
+                Functions.SaveSqlUser(tbSqlIp.Text, tbDatabaseName.Text, userSql.Text, passSql.Password, chkRemember.IsChecked);
                 try
                 {
                     conStr = ConSQL.GetConnectionString_up();
                     conn = new SqlConnection(conStr);
                     conn.Open();
-                    userSql.IsEnabled = false;
-                    passSql.IsEnabled = false;
-                    userSql.Background = Brushes.Green;
-                    passSql.Background = Brushes.Green;
+                    UpdateSqlUserPass(true);
                     loggedIn = true;
                     conn.Close();
                     dataSqlClasses.GetSqlTables();
-                    statSqlCon.Text = SqlMessages;
-                    statSqlConItem.Background = SqlColor;
-                    statSqlErr.Text = SqlErrMessage;
-                    statSqlErrItem.Background = SqlErrColor;
-                    btnSqlLogin.Content = "Log Out";
+                    UpdateGui(true, false, true);
+                    btnSqlLogin.Content = "Disconnect";
                     Run();
                 }
                 catch
                 {
-                    userSql.Text = "";
-                    passSql.Password = "";
-                    userSql.Background = Brushes.Red;
-                    passSql.Background = Brushes.Red;
+                    UpdateSqlUserPass(false);
                 }
                 finally
                 {
@@ -194,21 +237,14 @@ namespace APIDigger
                         TableRefresh.Abort();
                     if(SqlStoreTask != null)
                         SqlStoreTask.Abort();
-                    userSql.IsEnabled = true;
-                    passSql.IsEnabled = true;
-                    if (!Properties.Settings.Default.RememberLogin)
-                    {
-                        userSql.Text = "";
-                        passSql.Password = "";
-                    }
-                    userSql.Background = Brushes.White;
-                    passSql.Background = Brushes.White;
-                    statSqlCon.Text = "SQL Disconnected";
-                    statSqlConItem.Background = Brushes.Red;
-                    statApiCon.Text = "API Disconnected";
-                    statApiConItem.Background = Brushes.Red;
+                    UpdateSqlUserPass(null);
+                    SqlMessages = "SQL Disconnected";
+                    SqlColor = Brushes.Red;
+                    ApiMessages = "API Disconnected";
+                    ApiColor = Brushes.Red;
+                    UpdateGui(true, true, false);
                     getApiData.ItemsTable.Clear();
-                    btnSqlLogin.Content = "Log In";
+                    btnSqlLogin.Content = "Connect";
                     loggedIn = false;
                 }
             }
@@ -226,6 +262,9 @@ namespace APIDigger
                 {
                     Properties.Settings.Default.UserSql = "";
                     Properties.Settings.Default.PassSql = "";
+                    Properties.Settings.Default.SqlIpAddr = "";
+                    Properties.Settings.Default.SqlPort = "";
+                    Properties.Settings.Default.SqlDbName = "";
                     Properties.Settings.Default.Save();
                 }
                 conn.Close();
@@ -247,7 +286,7 @@ namespace APIDigger
 
         private void BtnLogInSql_Click(object sender, RoutedEventArgs e)
         {
-            if (btnSqlLogin.Content.ToString() == "Log In")
+            if (btnSqlLogin.Content.ToString() == "Connect")
                 LogInOut();
             else
                 LogInOut(false);
@@ -275,6 +314,13 @@ namespace APIDigger
         {
             Properties.Settings.Default.RememberLogin = false;
             Properties.Settings.Default.Save();
+        }
+
+        bool CheckValidIp(string _ipIn)
+        {
+            if (_ipIn.Contains(":"))
+                _ipIn = _ipIn.Split(':')[0];
+            return IPAddress.TryParse(_ipIn, out _);
         }
     }
 }
