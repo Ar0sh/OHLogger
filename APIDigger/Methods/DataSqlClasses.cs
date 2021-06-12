@@ -19,8 +19,6 @@ namespace APIDigger.Methods
         {
             string ColTime = "time";
             string ColVal = "value"; 
-            //string conStr = ConSQL.GetConnectionString_up();
-            //SqlConnection conn = new SqlConnection(conStr);
             string cmd;
             if (type.ToLower() == "dimmer" || type.ToLower().Contains("number"))
             {
@@ -42,16 +40,24 @@ namespace APIDigger.Methods
             {
                 cmd = "CREATE TABLE [dbo].[" + name + "]([" + ColTime + "][datetime2](7) NULL,[" + ColVal + "] [nvarchar](50) NULL) ON[PRIMARY]";
             }
-            OpenHABRest.conn.Open();
-
-            SqlCommand sqlCommand = new SqlCommand(cmd, OpenHABRest.conn);
             try
             {
+                OpenHABRest.conn.Open();
+                SqlCommand sqlCommand = new SqlCommand(cmd, OpenHABRest.conn);
                 sqlCommand.ExecuteNonQuery();
+                if (OpenHABRest.SqlTabColor != Brushes.Green)
+                {
+                    OpenHABRest.SqlTabColor = Brushes.Green;
+                    OpenHABRest.SqlTabMessage = "";
+                }
             }
-            catch
+            catch (SqlException sqlEx)
             {
-
+                if (OpenHABRest.SqlTabColor != Brushes.Red)
+                {
+                    OpenHABRest.SqlTabColor = Brushes.Red;
+                    OpenHABRest.SqlTabMessage = "Create Table Error: " + sqlEx.Message + "...";
+                }
             }
             finally
             {
@@ -61,8 +67,6 @@ namespace APIDigger.Methods
 
         public void GetSqlTables()
         {
-            //string conStr = ConSQL.GetConnectionString_up();
-            //SqlConnection conn = new SqlConnection(conStr);
             string cmd = "SELECT name FROM sys.Tables";
             OpenHABRest.conn.Open();
 
@@ -76,57 +80,69 @@ namespace APIDigger.Methods
                 }
             }
             catch
-            {
-
+            { 
             }
             finally
             {
                 OpenHABRest.conn.Close();
             }
         }
-        public void StoreValuesToSql()//Items item)
+        public void StoreValuesToSql()
         {
             string query = "DECLARE @Time AS DATETIME2(3)\nSET @Time = GETUTCDATE()\n";
             List<Items> ItemsListCopy = OpenHABRest.ItemsList.ToList();
+            string value;
             foreach (Items item in ItemsListCopy)
             {
                 if (item.type.ToLower() == "switch" || item.type.ToLower() == "color")
                 {
-                    query += "insert into " + item.name + " (time, value) values (@Time, '" + item.state.Split(' ')[0] + "') \n";
+                    value = "'" + item.state.Split(' ')[0] + "'";
                 }
                 else if (item.type.ToLower() == "datetime")
                 {
-                    query += "insert into " + item.name + " (time, value) values (@Time, '" + item.state.Split('+')[0] + "') \n";
+                    value = "'" + item.state.Split('+')[0] + "'";
                 }
                 else if (item.type.ToLower() == "string")
                 {
-                    query += "insert into " + item.name + " (time, value) values (@Time, '" + item.state + "') \n";
+                    value = "'" + item.state + "'";
                 }
                 else
                 {
-                    query += "insert into " + item.name + " (time, value) values (@Time, " + item.state.Split(' ')[0] + ") \n";
+                    value = item.state.Split(' ')[0];
                 }
+                query += "insert into " + item.name + " (time, value) values (@Time, " + value + ") \n";
             }
 
             SqlCommand sqlCommand = new SqlCommand(query, OpenHABRest.conn);
             try
             {
                 OpenHABRest.conn.Open();
-                sqlCommand.ExecuteNonQuery();
-                if(OpenHABRest.SqlColor != Brushes.Green)
+                sqlCommand.ExecuteNonQuery(); 
+                if (OpenHABRest.SqlErrColor != Brushes.Green)
+                {
+                    OpenHABRest.SqlErrColor = Brushes.Green;
+                    OpenHABRest.SqlErrMessage = "No SQL Errors";
+                }
+                if (OpenHABRest.SqlColor != Brushes.Green)
                 {
                     OpenHABRest.SqlColor = Brushes.Green;
-                    OpenHABRest.SqlMessages = "Sql Connected";
+                    OpenHABRest.SqlMessages = "SQL Connected";
                 }
             }
-            catch
+            catch(SqlException sqlEx)
             {
                 //MessageBox.Show("Error" + item.name + " " + item.state, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                //MessageBox.Show(sqlEx.Message);
+                if(OpenHABRest.SqlErrColor != Brushes.Red)
+                {
+                    OpenHABRest.SqlErrColor = Brushes.Red;
+                    OpenHABRest.SqlErrMessage = sqlEx.Message.Substring(0, 40) + "...";
+                }
                 //OpenHABRest.ErrorMessages = "Error: Item: " + item.name + ", State: " + item.state;
                 if (OpenHABRest.SqlColor != Brushes.Red)
                 {
                     OpenHABRest.SqlColor = Brushes.Red;
-                    OpenHABRest.SqlMessages = "Sql Disconnected";
+                    OpenHABRest.SqlMessages = "SQL Error";
                 }
             }
             finally

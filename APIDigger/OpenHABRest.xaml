@@ -59,18 +59,21 @@
         <TextBox x:Name="tbUpdateSpeed" Height="23" Margin="0,10,90,0" TextWrapping="Wrap" VerticalAlignment="Top" PreviewTextInput="TbUpdateSpeed_PreviewTextInput" HorizontalAlignment="Right" Width="120"/>
         <Button x:Name="btnReloadUpd" Content="Apply" Margin="0,10,10,0" VerticalAlignment="Top" Height="23" Click="BtnReloadUpd_Click" HorizontalAlignment="Right" Width="75"/>
         <StatusBar x:Name="statusBar" Height="25" VerticalAlignment="Bottom">
-            <StatusBarItem x:Name="statSqlConItem" Background="Red" VerticalAlignment="Center" Margin="10, 0, 0, 0">
+            <StatusBarItem x:Name="statSqlConItem" Background="Red" Margin="10, 0, 0, 0" BorderThickness="1" BorderBrush="Gray">
                 <TextBlock x:Name="statSqlCon" TextAlignment="Center"
                            FontWeight="Bold" />
             </StatusBarItem>
-            <Separator />
-            <StatusBarItem x:Name="statApiConItem" Background="Red" VerticalAlignment="Center" 
+            <StatusBarItem x:Name="statSqlErrItem" Background="Green" Margin="10, 0, 0, 0" BorderThickness="1" BorderBrush="Gray">
+                <TextBlock x:Name="statSqlErr" Text="No Sql Error" Foreground="Black" FontWeight="Bold"/>
+            </StatusBarItem>
+            <StatusBarItem x:Name="statSqlTabItem" Visibility="Hidden" Background="Red" Margin="10, 0, 0, 0" BorderThickness="1" BorderBrush="Gray">
+                <TextBlock x:Name="statSqlTab" Text="No Sql Error" Foreground="Black" FontWeight="Bold"/>
+            </StatusBarItem>
+            <StatusBarItem x:Name="statApiConItem" Background="Red" BorderThickness="1" BorderBrush="Gray"
                            HorizontalAlignment="Right" Margin="0, 0, 10, 0" HorizontalContentAlignment="Right">
-                <TextBlock x:Name="statApiCon" TextAlignment="Center"
-                           FontWeight="Bold" />
+                <TextBlock x:Name="statApiCon" TextAlignment="Center" FontWeight="Bold" />
             </StatusBarItem>
         </StatusBar>
-        <Button x:Name="btnSqlLogout" Content="Log Out" HorizontalAlignment="Left" Margin="350,10,0,0" VerticalAlignment="Top" Width="75" Height="23" Click="BtnSqlLogout_Click"/>
-        <CheckBox x:Name="chkRemember" Content="Remember" HorizontalAlignment="Left" Margin="430,15,0,0" VerticalAlignment="Top" Checked="ChkRemember_Checked" Unchecked="ChkRemember_Unchecked"/>
+        <CheckBox x:Name="chkRemember" Content="Remember" HorizontalAlignment="Left" Margin="350,15,0,0" VerticalAlignment="Top" Checked="ChkRemember_Checked" Unchecked="ChkRemember_Unchecked"/>
     </Grid>
 </Window>

@@ -21,21 +21,23 @@ namespace APIDigger
     public partial class OpenHABRest : Window
     {
         private readonly List<string> Items = new List<string>();
-        private readonly APILookup getData = new APILookup();
-        public static List<Items> ItemsList = new List<Items>();
-        readonly List<string> ApiElements = new List<string>();
+        private readonly APILookup getApiData = new APILookup();
+        private readonly DataSqlClasses dataSqlClasses = new DataSqlClasses();
         private Thread TableRefresh = null;
         private Thread SqlStoreTask = null;
-        public bool loggedIn = false;
-        //DataSqlClasses tables = new DataSqlClasses();
-        readonly DataSqlClasses dataSqlClasses = new DataSqlClasses();
+        private bool loggedIn = false;
+
+        public static List<Items> ItemsList = new List<Items>();
         public static string conStr;
         public static SqlConnection conn;
-        public static string ApiMessages = "Api Connected";
+        public static string ApiMessages = "API Connected";
         public static Brush ApiColor = Brushes.Green;
-        public static string SqlMessages = "Sql Connected";
+        public static string SqlMessages = "SQL Connected";
         public static Brush SqlColor = Brushes.Green;
-
+        public static string SqlErrMessage = "No SQL Errors";
+        public static Brush SqlErrColor = Brushes.Green;
+        public static string SqlTabMessage = "";
+        public static Brush SqlTabColor = Brushes.Green;
 
 
         public OpenHABRest()
@@ -44,6 +46,7 @@ namespace APIDigger
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
             statSqlCon.Text = SqlMessages;
             statApiCon.Text = ApiMessages;
+            statSqlErr.Text = SqlErrMessage;
             Title = "Openhab REST Items"; 
             if (Properties.Settings.Default.RememberLogin)
             {
@@ -56,10 +59,10 @@ namespace APIDigger
 
         void Run()
         {
-            getData.RestConn();
+            getApiData.RestConn();
             Load();
-            getData.PopulateDataTable();
-            dgSensors.DataContext = getData.ItemsTable.AsDataView();
+            getApiData.PopulateDataTable();
+            dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
             foreach (Items item in ItemsList)
             {
                 if (!dataSqlClasses.Tables.Contains(item.name))
@@ -67,54 +70,30 @@ namespace APIDigger
                     dataSqlClasses.CreateTables(item.name, item.type);
                 }
             }
-            if (getData.ItemsTable.Rows.Count > 0)
+            if(SqlTabMessage != "")
+            {
+                statSqlTab.Text = SqlTabMessage;
+                statSqlTabItem.Visibility = Visibility.Visible;
+            }
+            if (getApiData.ItemsTable.Rows.Count > 0)
             {
                 TableRefresh = new Thread(Update);
                 TableRefresh.Start();
                 SqlStoreTask = new Thread(StoreSqlCall);
                 SqlStoreTask.Start();
             }
-            else
-            {
-
-            }
-            
-        }
-
-        private void API_UpdateDict(bool update = false)
-        {
-            if (!update)
-                getData.PopulateItemsDict();
-            else
-                getData.UpdateItemsDict();
-
         }
 
         private void Load()
         {
-            ApiElements.Clear();
-            getData.ItemsDict.Clear();
+            getApiData.ItemsDict.Clear();
             Items.Clear();
             API_UpdateDict();
         }
 
-        void StoreSqlCall()
-        {
-            while(SqlStoreTask.IsAlive)
-            {
-                dataSqlClasses.StoreValuesToSql();
-                statSqlCon.Dispatcher.Invoke(() =>
-                {
-                    statSqlCon.Text = SqlMessages;
-                    statSqlConItem.Background = SqlColor;
-                });
-                Thread.Sleep(59200);
-            }
-        }
-
         void Update()
         {
-            while(TableRefresh.IsAlive)
+            while (TableRefresh.IsAlive)
             {
                 try
                 {
@@ -144,46 +123,94 @@ namespace APIDigger
                 }
             }
         }
-        private void TbUpdateSpeed_PreviewTextInput(object sender, TextCompositionEventArgs e)
+
+        private void API_UpdateDict(bool update = false)
         {
-            e.Handled = !Functions.IsTextAllowed(e.Text, @"[^0-9]");
+            if (!update)
+                getApiData.PopulateItemsDict();
+            else
+                getApiData.UpdateItemsDict();
+
         }
 
-        private void BtnReloadUpd_Click(object sender, RoutedEventArgs e)
+        void StoreSqlCall()
         {
-            Functions.SaveUpdateInterval(tbUpdateSpeed.Text);
+            while(SqlStoreTask.IsAlive)
+            {
+                dataSqlClasses.StoreValuesToSql();
+                statSqlCon.Dispatcher.Invoke(() =>
+                {
+                    statSqlCon.Text = SqlMessages;
+                    statSqlConItem.Background = SqlColor;
+                    statSqlErr.Text = SqlErrMessage;
+                    statSqlErrItem.Background = SqlErrColor;
+                });
+                Thread.Sleep(9200);
+            }
         }
 
-        private void BtnLogInSql_Click(object sender, RoutedEventArgs e)
+        private void LogInOut(bool LogIn = true)
         {
-            Functions.SaveSqlUser(userSql.Text, passSql.Password, chkRemember.IsChecked); 
-            
-            try
+            if(LogIn)
             {
-                conStr = ConSQL.GetConnectionString_up();
-                conn = new SqlConnection(conStr);
-                conn.Open();
-                userSql.IsEnabled = false;
-                passSql.IsEnabled = false;
-                userSql.Background = Brushes.Green;
-                passSql.Background = Brushes.Green;
-                loggedIn = true;
-                conn.Close();
-                dataSqlClasses.GetSqlTables();
-                statSqlCon.Text = SqlMessages;
-                statSqlConItem.Background = SqlColor;
-                Run();
+                Functions.SaveSqlUser(userSql.Text, passSql.Password, chkRemember.IsChecked);
+
+                try
+                {
+                    conStr = ConSQL.GetConnectionString_up();
+                    conn = new SqlConnection(conStr);
+                    conn.Open();
+                    userSql.IsEnabled = false;
+                    passSql.IsEnabled = false;
+                    userSql.Background = Brushes.Green;
+                    passSql.Background = Brushes.Green;
+                    loggedIn = true;
+                    conn.Close();
+                    dataSqlClasses.GetSqlTables();
+                    statSqlCon.Text = SqlMessages;
+                    statSqlConItem.Background = SqlColor;
+                    statSqlErr.Text = SqlErrMessage;
+                    statSqlErrItem.Background = SqlErrColor;
+                    btnSqlLogin.Content = "Log Out";
+                    Run();
+                }
+                catch
+                {
+                    userSql.Text = "";
+                    passSql.Password = "";
+                    userSql.Background = Brushes.Red;
+                    passSql.Background = Brushes.Red;
+                }
+                finally
+                {
+                    conn.Close();
+                }
             }
-            catch
+            else
             {
-                userSql.Text = "";
-                passSql.Password = "";
-                userSql.Background = Brushes.Red;
-                passSql.Background = Brushes.Red;
-            }
-            finally
-            {
-                conn.Close();
+                if (loggedIn)
+                {
+                    if(TableRefresh != null)
+                        TableRefresh.Abort();
+                    if(SqlStoreTask != null)
+                        SqlStoreTask.Abort();
+                    userSql.IsEnabled = true;
+                    passSql.IsEnabled = true;
+                    if (!Properties.Settings.Default.RememberLogin)
+                    {
+                        userSql.Text = "";
+                        passSql.Password = "";
+                    }
+                    userSql.Background = Brushes.White;
+                    passSql.Background = Brushes.White;
+                    statSqlCon.Text = "SQL Disconnected";
+                    statSqlConItem.Background = Brushes.Red;
+                    statApiCon.Text = "API Disconnected";
+                    statApiConItem.Background = Brushes.Red;
+                    getApiData.ItemsTable.Clear();
+                    btnSqlLogin.Content = "Log In";
+                    loggedIn = false;
+                }
             }
         }
 
@@ -191,8 +218,10 @@ namespace APIDigger
         {
             if (loggedIn)
             {
-                TableRefresh.Abort();
-                SqlStoreTask.Abort();
+                if(TableRefresh != null)
+                    TableRefresh.Abort();
+                if(SqlStoreTask != null)
+                    SqlStoreTask.Abort();
                 if(chkRemember.IsChecked == false)
                 {
                     Properties.Settings.Default.UserSql = "";
@@ -203,6 +232,11 @@ namespace APIDigger
             }
         }
 
+        private void TbUpdateSpeed_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !Functions.IsTextAllowed(e.Text, @"[^0-9]");
+        }
+
         private void PassSql_KeyDown(object sender, KeyEventArgs e)
         {
             if(e.Key == Key.Enter || e.Key == Key.Return)
@@ -211,34 +245,23 @@ namespace APIDigger
             }
         }
 
+        private void BtnLogInSql_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnSqlLogin.Content.ToString() == "Log In")
+                LogInOut();
+            else
+                LogInOut(false);
+        }
+
+        private void BtnReloadUpd_Click(object sender, RoutedEventArgs e)
+        {
+            Functions.SaveUpdateInterval(tbUpdateSpeed.Text);
+        }
+
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
             TextBlock content = (TextBlock)dgSensors.SelectedCells[0].Column.GetCellContent(dgSensors.SelectedCells[0].Item);
             Process.Start("http://192.168.1.161:8082/rest/items/" + content.Text);
-        }
-
-        private void BtnSqlLogout_Click(object sender, RoutedEventArgs e)
-        {
-            if (loggedIn)
-            {
-                TableRefresh.Abort();
-                SqlStoreTask.Abort(); 
-                userSql.IsEnabled = true;
-                passSql.IsEnabled = true;
-                if (!Properties.Settings.Default.RememberLogin)
-                {
-                    userSql.Text = "";
-                    passSql.Password = "";
-                }
-                userSql.Background = Brushes.White;
-                passSql.Background = Brushes.White;
-                statSqlCon.Text = "Sql Disconnected";
-                statSqlConItem.Background = Brushes.Red;
-                statApiCon.Text = "Api Disconnected";
-                statApiConItem.Background = Brushes.Red;
-                getData.ItemsTable.Clear();
-                loggedIn = false;
-            }
         }
 
         private void ChkRemember_Checked(object sender, RoutedEventArgs e)
