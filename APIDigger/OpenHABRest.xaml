@@ -75,7 +75,7 @@
             <Grid>
                 <Label Content="Server IP:Port" HorizontalAlignment="Left" Margin="10,9,0,0" VerticalAlignment="Top"/>
                 <TextBox x:Name="tbSqlIp" HorizontalAlignment="Left" Height="23" Margin="96,10,0,0" TextWrapping="NoWrap" 
-                         VerticalAlignment="Top" Width="185" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                         VerticalAlignment="Top" Width="185" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" PreviewTextInput="tbSqlIp_PreviewTextInput"/>
                 <Label Content="Db Name" HorizontalAlignment="Left" Margin="10,37,0,0" VerticalAlignment="Top"/>
                 <TextBox x:Name="tbDatabaseName" HorizontalAlignment="Left" Height="23" Margin="96,38,0,0" TextWrapping="NoWrap" 
                          VerticalAlignment="Top" Width="185" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>

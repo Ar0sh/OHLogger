@@ -80,39 +80,43 @@ namespace APIDigger
             }
         }
 
-        void UpdateSqlUserPass(bool? _LoggedIn)
+        void UpdateSqlUserPass(string _LoggedIn)
         {
-            if(_LoggedIn == true)
-            { 
-                userSql.IsEnabled = false;
-                passSql.IsEnabled = false;
-                tbSqlIp.IsEnabled = false;
-                tbDatabaseName.IsEnabled = false;
-                userSql.Background = Brushes.Green;
-                passSql.Background = Brushes.Green;
-            }
-            else if (_LoggedIn == false)
-            { 
-                userSql.Text = "";
-                passSql.Password = "";
-                userSql.Background = Brushes.Red;
-                passSql.Background = Brushes.Red;
-            }
-            else
+            switch(_LoggedIn)
             {
-                userSql.IsEnabled = true;
-                passSql.IsEnabled = true;
-                tbSqlIp.IsEnabled = true;
-                tbDatabaseName.IsEnabled = true;
-                if (!Properties.Settings.Default.RememberLogin)
-                {
+                case "UserAccepted":
+                    userSql.IsEnabled = false;
+                    passSql.IsEnabled = false;
+                    tbSqlIp.IsEnabled = false;
+                    tbDatabaseName.IsEnabled = false;
+                    userSql.Background = Brushes.Green;
+                    passSql.Background = Brushes.Green;
+                    tbSqlIp.Background = Brushes.Green;
+                    break;
+                case "UserNotAccepted":
                     userSql.Text = "";
                     passSql.Password = "";
-                }
-                userSql.Background = Brushes.White;
-                passSql.Background = Brushes.White;
+                    userSql.Background = Brushes.Red;
+                    passSql.Background = Brushes.Red;
+                    break;
+                case "Wrong IP":
+                    tbSqlIp.Background = Brushes.Red;
+                    break;
+                case "LogOut":
+                    userSql.IsEnabled = true;
+                    passSql.IsEnabled = true;
+                    tbSqlIp.IsEnabled = true;
+                    tbDatabaseName.IsEnabled = true;
+                    if (!Properties.Settings.Default.RememberLogin)
+                    {
+                        userSql.Text = "";
+                        passSql.Password = "";
+                    }
+                    userSql.Background = Brushes.White;
+                    passSql.Background = Brushes.White;
+                    break;
             }
-        }
+    }
 
         void Run()
         {
@@ -209,10 +213,14 @@ namespace APIDigger
                 Functions.SaveSqlUser(tbSqlIp.Text, tbDatabaseName.Text, userSql.Text, passSql.Password, chkRemember.IsChecked);
                 try
                 {
+                    if(!CheckValidIp(tbSqlIp.Text))
+                    {
+                        throw new Exception("Wrong IP");
+                    }
                     conStr = ConSQL.GetConnectionString_up();
                     conn = new SqlConnection(conStr);
                     conn.Open();
-                    UpdateSqlUserPass(true);
+                    UpdateSqlUserPass("UserAccepted");
                     loggedIn = true;
                     conn.Close();
                     dataSqlClasses.GetSqlTables();
@@ -220,13 +228,19 @@ namespace APIDigger
                     btnSqlLogin.Content = "Disconnect";
                     Run();
                 }
-                catch
+                catch(Exception ex)
                 {
-                    UpdateSqlUserPass(false);
+                    if(ex.Message == "Wrong IP")
+                    {
+                        UpdateSqlUserPass("Wrong IP");
+                    }
+                    else
+                        UpdateSqlUserPass("UserNotAccepted");
                 }
                 finally
                 {
-                    conn.Close();
+                    if(conn != null)
+                        conn.Close();
                 }
             }
             else
@@ -237,7 +251,7 @@ namespace APIDigger
                         TableRefresh.Abort();
                     if(SqlStoreTask != null)
                         SqlStoreTask.Abort();
-                    UpdateSqlUserPass(null);
+                    UpdateSqlUserPass("LogOut");
                     SqlMessages = "SQL Disconnected";
                     SqlColor = Brushes.Red;
                     ApiMessages = "API Disconnected";
@@ -321,6 +335,24 @@ namespace APIDigger
             if (_ipIn.Contains(":"))
                 _ipIn = _ipIn.Split(':')[0];
             return IPAddress.TryParse(_ipIn, out _);
+        }
+
+        private void tbSqlIp_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !IsTextAllowed(e.Text, @"[^0-9:]");
+        }
+
+        private static bool IsTextAllowed(string Text, string AllowedRegex)
+        {
+            try
+            {
+                var regex = new Regex(AllowedRegex);
+                return !regex.IsMatch(Text);
+            }
+            catch
+            {
+                return true;
+            }
         }
     }
 }
