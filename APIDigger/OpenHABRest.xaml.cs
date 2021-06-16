@@ -27,7 +27,9 @@ namespace APIDigger
         private readonly DataSqlClasses dataSqlClasses = new DataSqlClasses();
         private Thread TableRefresh = null;
         private Thread SqlStoreTask = null;
-        private bool loggedIn = false;
+        private Thread LogInSql = null;
+        private bool _sqlloggedIn = false;
+        private bool _apiloggedIn = false;
 
         public static List<Items> ItemsList = new List<Items>();
         public static string conStr;
@@ -40,6 +42,7 @@ namespace APIDigger
         public static Brush SqlErrColor = Brushes.Green;
         public static string SqlTabMessage = "";
         public static Brush SqlTabColor = Brushes.Red;
+        public static bool _CheckApiCon;
 
 
         public OpenHABRest()
@@ -48,7 +51,7 @@ namespace APIDigger
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
             UpdateGui(true, true, true);
             Title = "Openhab REST Items"; 
-            if (Properties.Settings.Default.RememberLogin)
+            if (Properties.Settings.Default.RememberSqlLogin)
             {
                 userSql.Text = Properties.Settings.Default.UserSql;
                 passSql.Password = Properties.Settings.Default.PassSql;
@@ -56,8 +59,16 @@ namespace APIDigger
                 if (Properties.Settings.Default.SqlPort != "")
                     tbSqlIp.Text += ":" + Properties.Settings.Default.SqlPort;
                 tbDatabaseName.Text = Properties.Settings.Default.SqlDbName;
-                chkRemember.IsChecked = true;
+                ChkRememberSql.IsChecked = true;
+                //if(Properties.Settings.Default.AutoLogon == true) 
                 BtnLogInSql_Click(null, null);
+            }
+            if(Properties.Settings.Default.RememberApiLogin)
+            {
+                tbApiIp.Text = Properties.Settings.Default.ApiAddr;
+                ChkRememberApi.IsChecked = true;
+                //if (Properties.Settings.Default.AutoLogon == true)
+                BtnConnectApi_Click(null, null);
             }
         }
 
@@ -92,12 +103,18 @@ namespace APIDigger
                     userSql.Background = Brushes.Green;
                     passSql.Background = Brushes.Green;
                     tbSqlIp.Background = Brushes.Green;
+                    tbDatabaseName.Background = Brushes.Green;
                     break;
                 case "UserNotAccepted":
-                    userSql.Text = "";
-                    passSql.Password = "";
-                    userSql.Background = Brushes.Red;
-                    passSql.Background = Brushes.Red;
+                    Dispatcher.Invoke(() =>
+                    {
+                        tbSqlIp.Background = !CheckValidIp(tbSqlIp.Text) ? Brushes.Red : Brushes.Orange;
+                        tbDatabaseName.Background = tbDatabaseName.Text != "" ? Brushes.Orange : Brushes.Red;
+                        userSql.Background = userSql.Text != "" ? Brushes.Orange : Brushes.Red;
+                        passSql.Background = passSql.Password != "" ? Brushes.Orange : Brushes.Red;
+                        statSqlErr.Text = "Sql Login Error";
+                        statSqlErrItem.Background = Brushes.Red;
+                    });
                     break;
                 case "Wrong IP":
                     tbSqlIp.Background = Brushes.Red;
@@ -107,23 +124,21 @@ namespace APIDigger
                     passSql.IsEnabled = true;
                     tbSqlIp.IsEnabled = true;
                     tbDatabaseName.IsEnabled = true;
-                    if (!Properties.Settings.Default.RememberLogin)
+                    if (!Properties.Settings.Default.RememberSqlLogin)
                     {
                         userSql.Text = "";
                         passSql.Password = "";
                     }
                     userSql.Background = Brushes.White;
                     passSql.Background = Brushes.White;
+                    tbSqlIp.Background = Brushes.White;
+                    tbDatabaseName.Background = Brushes.White;
                     break;
             }
     }
 
-        void Run()
+        void RunSql()
         {
-            getApiData.RestConn();
-            Load();
-            getApiData.PopulateDataTable();
-            dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
             foreach (Items item in ItemsList)
             {
                 if (!dataSqlClasses.Tables.Contains(item.name))
@@ -136,20 +151,26 @@ namespace APIDigger
                 statSqlTab.Text = SqlTabMessage;
                 statSqlTabItem.Visibility = Visibility.Visible;
             }
-            if (getApiData.ItemsTable.Rows.Count > 0)
-            {
-                TableRefresh = new Thread(Update);
-                TableRefresh.Start();
-                SqlStoreTask = new Thread(StoreSqlCall);
-                SqlStoreTask.Start();
-            }
+            SqlStoreTask = new Thread(StoreSqlCall);
+            SqlStoreTask.Start();
         }
 
-        private void Load()
+        void RunApi()
         {
+            Functions.SaveApiDetails(tbApiIp.Text, ChkRememberSql.IsChecked);
+            getApiData.RestConn(); 
             getApiData.ItemsDict.Clear();
             Items.Clear();
             API_UpdateDict();
+            getApiData.PopulateDataTable();
+            dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
+            TableRefresh = new Thread(Update);
+            TableRefresh.Start();
+            if(SqlStoreTask == null && btnSqlLogin.Content.ToString() != "Connect")
+            {
+                SqlStoreTask = new Thread(StoreSqlCall);
+                SqlStoreTask.Start();
+            }
         }
 
         void Update()
@@ -159,7 +180,14 @@ namespace APIDigger
                 try
                 {
                     Items.Clear();
-                    API_UpdateDict(true);
+                    if (getApiData.ItemsDict.Count == 0)
+                    {
+                        API_UpdateDict();
+                        getApiData.PopulateDataTable();
+                        dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
+                    }
+                    else
+                        API_UpdateDict(true);
                     dgSensors.Dispatcher.Invoke(() =>
                     {
                         if (dgSensors.IsKeyboardFocusWithin)
@@ -197,88 +225,192 @@ namespace APIDigger
         {
             while(SqlStoreTask.IsAlive)
             {
-                dataSqlClasses.StoreValuesToSql();
-                statSqlCon.Dispatcher.Invoke(() =>
+                if(ItemsList.Count > 0)
+                { 
+                    dataSqlClasses.StoreValuesToSql();
+                    statSqlCon.Dispatcher.Invoke(() =>
+                    {
+                        UpdateGui(true, false, true);
+                    });
+                }
+                else
                 {
-                    UpdateGui(true, false, true);
-                });
-                Thread.Sleep(59200);
+                    SqlMessages = "SQL Connected";
+                    SqlColor = Brushes.Green;
+                    if(!_apiloggedIn)
+                    {
+                        SqlErrMessage = "No API Data";
+                        SqlErrColor = Brushes.Orange;
+                    }
+                    statSqlCon.Dispatcher.Invoke(() =>
+                    {
+                        UpdateGui(true, false, true);
+                    });
+                }
+                Thread.Sleep(59400);
             }
         }
 
-        private void LogInOut(bool LogIn = true)
+        void LogInThread(string _Ip)
         {
-            if(LogIn)
+            try
             {
-                Functions.SaveSqlUser(tbSqlIp.Text, tbDatabaseName.Text, userSql.Text, passSql.Password, chkRemember.IsChecked);
-                try
+                if (!CheckValidIp(_Ip))
                 {
-                    if(!CheckValidIp(tbSqlIp.Text))
-                    {
-                        throw new Exception("Wrong IP");
-                    }
-                    conStr = ConSQL.GetConnectionString_up();
-                    conn = new SqlConnection(conStr);
-                    conn.Open();
+                    throw new Exception("Wrong IP");
+                }
+                conStr = ConSQL.GetConnectionString_up();
+                conn = new SqlConnection(conStr);
+                conn.Open();
+                conn.Close();
+                Dispatcher.Invoke(() =>
+                {
                     UpdateSqlUserPass("UserAccepted");
-                    loggedIn = true;
-                    conn.Close();
-                    dataSqlClasses.GetSqlTables();
                     UpdateGui(true, false, true);
                     btnSqlLogin.Content = "Disconnect";
-                    Run();
-                }
-                catch(Exception ex)
+                });
+                _sqlloggedIn = true;
+                dataSqlClasses.GetSqlTables();
+                Dispatcher.Invoke(() =>
                 {
-                    if(ex.Message == "Wrong IP")
-                    {
-                        UpdateSqlUserPass("Wrong IP");
+                    RunSql();
+                });
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message == "Wrong IP")
+                {
+                    UpdateSqlUserPass(ex.Message);
+                }
+                else
+                    UpdateSqlUserPass("UserNotAccepted");
+            }
+            finally
+            {
+                if (conn != null)
+                    conn.Close();
+                Dispatcher.Invoke(() =>
+                {
+                    btnSqlLogin.IsEnabled = true;
+                    if (btnSqlLogin.Content.ToString() == "Connecting...")
+                        btnSqlLogin.Content = "Connect";
+                });
+            }
+        }
+
+        private void ConnectApi(bool LogIn = true)
+        {
+            if(LogIn && CheckValidIp(tbApiIp.Text, true))
+            {
+                Functions.SaveApiDetails(tbApiIp.Text, ChkRememberApi.IsChecked);
+                getApiData.RestConn(true);
+                if(_CheckApiCon)
+                { 
+                    RunApi();
+                    if(getApiData.ItemsDict.Count > 0)
+                    { 
+                        btnConnectApi.Content = "Disconnect";
+                        tbApiIp.IsEnabled = false;
+                        SqlErrMessage = "Waiting for API data";
+                        SqlErrColor = Brushes.LightGreen;
+                        if(tbApiIp.Background == Brushes.Red || tbApiIp.Background == Brushes.White)
+                            tbApiIp.Background = Brushes.Green;
+                        UpdateGui(false, false, true);
+                        _apiloggedIn = true;
                     }
-                    else
-                        UpdateSqlUserPass("UserNotAccepted");
                 }
-                finally
+                else
                 {
-                    if(conn != null)
-                        conn.Close();
+                    if (tbApiIp.Background == Brushes.Green || tbApiIp.Background == Brushes.White)
+                        tbApiIp.Background = Brushes.Red;
+                    tbApiIp.IsEnabled = true;
                 }
             }
             else
             {
-                if (loggedIn)
+                if(_apiloggedIn)
                 {
-                    if(TableRefresh != null)
+                    if (TableRefresh != null)
                         TableRefresh.Abort();
+                    getApiData.ItemsTable.Clear();
+                    ItemsList.Clear();
+                    btnConnectApi.IsEnabled = true;
+                    tbApiIp.IsEnabled = true;
+                    btnConnectApi.Content = "Connect";
+                    ApiMessages = "API Disconnected";
+                    SqlErrMessage = "API Lost";
+                    SqlErrColor = Brushes.PaleVioletRed;
+                    ApiColor = Brushes.Red;
+                    if (tbApiIp.Background == Brushes.Red || tbApiIp.Background == Brushes.Green)
+                        tbApiIp.Background = Brushes.White;
+                    UpdateGui(false, true, true);
+                    _apiloggedIn = false;
+                }
+                else
+                {
+                    tbApiIp.Background = Brushes.Red;
+                }
+            }
+        }
+
+        private void LogInOutSql(bool LogIn = true)
+        {
+            if(LogIn)
+            {
+                if(CheckValidIp(tbSqlIp.Text) && tbDatabaseName.Text != "" && userSql.Text != "" && passSql.Password != "")
+                { 
+                    btnSqlLogin.IsEnabled = false;
+                    btnSqlLogin.Content = "Connecting...";
+                    string _Ip = tbSqlIp.Text;
+                    Functions.SaveSqlUser(_Ip, tbDatabaseName.Text, userSql.Text, passSql.Password, ChkRememberSql.IsChecked);
+                    LogInSql = new Thread(() => LogInThread(_Ip));
+                    LogInSql.Start();
+                }
+                else
+                {
+                    UpdateSqlUserPass("UserNotAccepted");
+                }
+            }
+            else
+            {
+                if (_sqlloggedIn)
+                {
                     if(SqlStoreTask != null)
                         SqlStoreTask.Abort();
+                    if (LogInSql != null)
+                        LogInSql.Abort();
                     UpdateSqlUserPass("LogOut");
                     SqlMessages = "SQL Disconnected";
                     SqlColor = Brushes.Red;
-                    ApiMessages = "API Disconnected";
-                    ApiColor = Brushes.Red;
                     UpdateGui(true, true, false);
-                    getApiData.ItemsTable.Clear();
                     btnSqlLogin.Content = "Connect";
-                    loggedIn = false;
+                    _sqlloggedIn = false;
                 }
             }
         }
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            if (loggedIn)
+            if (_sqlloggedIn)
             {
                 if(TableRefresh != null)
                     TableRefresh.Abort();
                 if(SqlStoreTask != null)
                     SqlStoreTask.Abort();
-                if(chkRemember.IsChecked == false)
+                if (LogInSql != null)
+                    LogInSql.Abort();
+                if(ChkRememberSql.IsChecked == false)
                 {
                     Properties.Settings.Default.UserSql = "";
                     Properties.Settings.Default.PassSql = "";
                     Properties.Settings.Default.SqlIpAddr = "";
                     Properties.Settings.Default.SqlPort = "";
                     Properties.Settings.Default.SqlDbName = "";
+                    Properties.Settings.Default.Save();
+                }
+                if (ChkRememberApi.IsChecked == false)
+                {
+                    Properties.Settings.Default.ApiAddr = "";
                     Properties.Settings.Default.Save();
                 }
                 conn.Close();
@@ -301,14 +433,17 @@ namespace APIDigger
         private void BtnLogInSql_Click(object sender, RoutedEventArgs e)
         {
             if (btnSqlLogin.Content.ToString() == "Connect")
-                LogInOut();
+                LogInOutSql();
             else
-                LogInOut(false);
+                LogInOutSql(false);
         }
 
-        private void BtnReloadUpd_Click(object sender, RoutedEventArgs e)
+        private void BtnConnectApi_Click(object sender, RoutedEventArgs e)
         {
-            Functions.SaveUpdateInterval(tbUpdateSpeed.Text);
+            if (btnConnectApi.Content.ToString() == "Connect")
+                ConnectApi();
+            else
+                ConnectApi(false);
         }
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
@@ -317,29 +452,43 @@ namespace APIDigger
             Process.Start("http://192.168.1.161:8082/rest/items/" + content.Text);
         }
 
-        private void ChkRemember_Checked(object sender, RoutedEventArgs e)
+        private void ChkRememberSql_Checked(object sender, RoutedEventArgs e)
         {
-            Properties.Settings.Default.RememberLogin = true;
+            Properties.Settings.Default.RememberSqlLogin = true;
             Properties.Settings.Default.Save();
 
         }
 
-        private void ChkRemember_Unchecked(object sender, RoutedEventArgs e)
+        private void ChkRememberSql_Unchecked(object sender, RoutedEventArgs e)
         {
-            Properties.Settings.Default.RememberLogin = false;
+            Properties.Settings.Default.RememberSqlLogin = false;
             Properties.Settings.Default.Save();
         }
 
-        bool CheckValidIp(string _ipIn)
+        bool CheckValidIp(string _ipIn, bool checkPort = false)
         {
-            if (_ipIn.Contains(":"))
-                _ipIn = _ipIn.Split(':')[0];
-            return IPAddress.TryParse(_ipIn, out _);
+            if(checkPort)
+            { 
+                try
+                {
+                    return _ipIn.Contains(':') && IPAddress.TryParse(_ipIn.Split(':')[0], out _);
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (_ipIn.Contains(":"))
+                    _ipIn = _ipIn.Split(':')[0];
+                return IPAddress.TryParse(_ipIn, out _);
+            }
         }
 
-        private void tbSqlIp_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        private void TbSqlIp_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !IsTextAllowed(e.Text, @"[^0-9:]");
+            e.Handled = !IsTextAllowed(e.Text, @"[^0-9:.]");
         }
 
         private static bool IsTextAllowed(string Text, string AllowedRegex)
@@ -353,6 +502,58 @@ namespace APIDigger
             {
                 return true;
             }
+        }
+
+        #region NumericUpDown
+        private int _numValue = 0;
+
+        public int NumValue
+        {
+            get { return _numValue; }
+            set
+            {
+                _numValue = value;
+                tbUpdateSpeed.Text = value.ToString();
+                Functions.SaveUpdateInterval(tbUpdateSpeed.Text);
+            }
+        }
+
+        private void CmdUp_Click(object sender, RoutedEventArgs e)
+        {
+            if(NumValue < 10)
+                NumValue++;
+        }
+
+        private void CmdDown_Click(object sender, RoutedEventArgs e)
+        {
+            if(NumValue > 1)
+                NumValue--;
+        }
+
+        private void TbUpdateSpeed_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (tbUpdateSpeed == null)
+            {
+                return;
+            }
+
+            if (!int.TryParse(tbUpdateSpeed.Text, out _numValue))
+            { 
+                tbUpdateSpeed.Text = _numValue.ToString(); 
+            }
+        }
+        #endregion
+
+        private void ChkRememberApi_Checked(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.RememberApiLogin = true;
+            Properties.Settings.Default.Save();
+        }
+
+        private void ChkRememberApi_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.RememberApiLogin = false;
+            Properties.Settings.Default.Save();
         }
     }
 }

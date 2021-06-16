@@ -15,10 +15,10 @@ namespace APIDigger.Classes
 			if (Properties.Settings.Default.SqlPort != "")
 				connString = "Server=" + Properties.Settings.Default.SqlIpAddr + "," + Properties.Settings.Default.SqlPort + 
 					"; database=" + Properties.Settings.Default.SqlDbName + "; UID=" + Properties.Settings.Default.UserSql + "; password=" + 
-					Properties.Settings.Default.PassSql;
+					Properties.Settings.Default.PassSql + ";Connection Timeout=1";
 			else
 				connString = "Server=" + Properties.Settings.Default.SqlIpAddr + "; database=" + Properties.Settings.Default.SqlDbName + "; UID=" + 
-					Properties.Settings.Default.UserSql +  "; password=" + Properties.Settings.Default.PassSql;
+					Properties.Settings.Default.UserSql +  "; password=" + Properties.Settings.Default.PassSql + ";Connection Timeout=1";
 			return connString;
 		}
 	}

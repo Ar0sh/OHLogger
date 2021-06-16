@@ -90,13 +90,14 @@ namespace APIDigger.Methods
 
         }
 
-        public void RestConn()
+        public void RestConn(bool checkCon = false)
         {
+            OpenHABRest._CheckApiCon = true;
             OpenHABRest.ItemsList.Clear();
-            var restClient = new RestClient("http://192.168.1.161:8082/");
+            var restClient = new RestClient("http://" + Properties.Settings.Default.ApiAddr + "/");
             var request = new RestRequest("rest/items/", Method.GET);
             var queryResult = restClient.Execute<List<Items>>(request).Data;
-            if(queryResult != null)
+            if(queryResult != null && !checkCon)
             {
                 foreach (Items item in queryResult)
                 {
@@ -108,6 +109,10 @@ namespace APIDigger.Methods
                     OpenHABRest.ApiColor = Brushes.Green;
                     OpenHABRest.ApiMessages = "Api Connected";
                 }
+            }
+            else if(queryResult == null && checkCon)
+            {
+                OpenHABRest._CheckApiCon = false;
             }
             else
             {

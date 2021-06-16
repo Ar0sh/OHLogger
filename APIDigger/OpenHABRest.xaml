@@ -53,8 +53,6 @@
                 </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
-        <TextBox x:Name="tbUpdateSpeed" Height="23" Margin="0,10,90,0" TextWrapping="Wrap" VerticalAlignment="Top" PreviewTextInput="TbUpdateSpeed_PreviewTextInput" HorizontalAlignment="Right" Width="120"/>
-        <Button x:Name="btnReloadUpd" Content="Apply" Margin="0,10,10,0" VerticalAlignment="Top" Height="23" Click="BtnReloadUpd_Click" HorizontalAlignment="Right" Width="75"/>
         <StatusBar x:Name="statusBar" Height="25" VerticalAlignment="Bottom">
             <StatusBarItem x:Name="statSqlConItem" Background="Red" Margin="10, 0, 0, 0" BorderThickness="1" BorderBrush="Gray">
                 <TextBlock x:Name="statSqlCon" TextAlignment="Center"
@@ -75,7 +73,7 @@
             <Grid>
                 <Label Content="Server IP:Port" HorizontalAlignment="Left" Margin="10,9,0,0" VerticalAlignment="Top"/>
                 <TextBox x:Name="tbSqlIp" HorizontalAlignment="Left" Height="23" Margin="96,10,0,0" TextWrapping="NoWrap" 
-                         VerticalAlignment="Top" Width="185" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" PreviewTextInput="tbSqlIp_PreviewTextInput"/>
+                         VerticalAlignment="Top" Width="185" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" PreviewTextInput="TbSqlIp_PreviewTextInput"/>
                 <Label Content="Db Name" HorizontalAlignment="Left" Margin="10,37,0,0" VerticalAlignment="Top"/>
                 <TextBox x:Name="tbDatabaseName" HorizontalAlignment="Left" Height="23" Margin="96,38,0,0" TextWrapping="NoWrap" 
                          VerticalAlignment="Top" Width="185" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
@@ -87,9 +85,25 @@
                      Width="100" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Height="23" VerticalAlignment="Top"/>
                 <Button x:Name="btnSqlLogin" Content="Connect" HorizontalAlignment="Left" Margin="201,94,0,0" 
                         VerticalAlignment="Top" Width="80" Height="23" Click="BtnLogInSql_Click"/>
-                <CheckBox x:Name="chkRemember" Content="Remember" HorizontalAlignment="Left" Margin="201,71,0,0" 
-                          VerticalAlignment="Top" Checked="ChkRemember_Checked" Unchecked="ChkRemember_Unchecked" Width="80"/>
-
+                <CheckBox x:Name="ChkRememberSql" Content="Remember" HorizontalAlignment="Left" Margin="201,71,0,0" 
+                          VerticalAlignment="Top" Checked="ChkRememberSql_Checked" Unchecked="ChkRememberSql_Unchecked" Width="80"/>
+            </Grid>
+        </GroupBox>
+        <GroupBox Header="Api Input" HorizontalAlignment="Left" Height="150" Margin="318,1,0,0" VerticalAlignment="Top" Width="303">
+            <Grid>
+                <Label Content="Api IP:Port" HorizontalAlignment="Left" Margin="10,9,0,0" VerticalAlignment="Top"/>
+                <TextBox x:Name="tbApiIp" HorizontalAlignment="Left" Height="23" Margin="96,10,0,0" TextWrapping="NoWrap" 
+                    VerticalAlignment="Top" Width="185" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" PreviewTextInput="TbSqlIp_PreviewTextInput"/>
+                <CheckBox x:Name="ChkRememberApi" Content="Remember" HorizontalAlignment="Left" Margin="201,71,0,0" 
+                    VerticalAlignment="Top" Checked="ChkRememberApi_Checked" Unchecked="ChkRememberApi_Unchecked" Width="80"/>
+                <!--<TextBox x:Name="tbUpdateSpeed" Height="23" Margin="0,38,146,0" TextWrapping="Wrap" VerticalAlignment="Top" PreviewTextInput="TbUpdateSpeed_PreviewTextInput" HorizontalAlignment="Right" Width="49"/>-->
+                <Button x:Name="btnConnectApi" Content="Connect" Margin="0,94,10,0" VerticalAlignment="Top" Height="23" Click="BtnConnectApi_Click" 
+                        HorizontalAlignment="Right" Width="75"/>
+                <Grid  Height="23" Margin="96,66,146,0" VerticalAlignment="Top">
+                    <TextBox x:Name="tbUpdateSpeed" IsEnabled="False" x:FieldModifier="private" Text="0" TextChanged="TbUpdateSpeed_TextChanged" Margin="0,0,13,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                    <Button x:Name="cmdUp" x:FieldModifier="private" FontSize="12" Padding="0,-4,0,0" Content="▲" Width="12" Click="CmdUp_Click" Margin="0,0,0,12" HorizontalAlignment="Right" />
+                    <Button x:Name="cmdDown" x:FieldModifier="private" FontSize="12" Padding="0,-4,0,0" Content="▼" Width="12" Click="CmdDown_Click" Margin="0,12,0,0" HorizontalAlignment="Right" />
+                </Grid>
             </Grid>
         </GroupBox>
     </Grid>

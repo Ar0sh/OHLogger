@@ -62,12 +62,12 @@ namespace APIDigger.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool RememberLogin {
+        public bool RememberSqlLogin {
             get {
-                return ((bool)(this["RememberLogin"]));
+                return ((bool)(this["RememberSqlLogin"]));
             }
             set {
-                this["RememberLogin"] = value;
+                this["RememberSqlLogin"] = value;
             }
         }
         
@@ -104,6 +104,42 @@ namespace APIDigger.Properties {
             }
             set {
                 this["SqlPort"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ApiAddr {
+            get {
+                return ((string)(this["ApiAddr"]));
+            }
+            set {
+                this["ApiAddr"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool RememberApiLogin {
+            get {
+                return ((bool)(this["RememberApiLogin"]));
+            }
+            set {
+                this["RememberApiLogin"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AutoLogon {
+            get {
+                return ((bool)(this["AutoLogon"]));
+            }
+            set {
+                this["AutoLogon"] = value;
             }
         }
     }
