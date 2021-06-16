@@ -67,6 +67,7 @@ namespace APIDigger.Methods
 
         public void GetSqlTables()
         {
+            Tables.Clear();
             string cmd = "SELECT name FROM sys.Tables";
             OpenHABRest.conn.Open();
 
@@ -131,14 +132,11 @@ namespace APIDigger.Methods
             }
             catch(SqlException sqlEx)
             {
-                //MessageBox.Show("Error" + item.name + " " + item.state, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                //MessageBox.Show(sqlEx.Message);
                 if(OpenHABRest.SqlErrColor != Brushes.Red)
                 {
                     OpenHABRest.SqlErrColor = Brushes.Red;
                     OpenHABRest.SqlErrMessage = sqlEx.Message.Substring(0, 40) + "...";
                 }
-                //OpenHABRest.ErrorMessages = "Error: Item: " + item.name + ", State: " + item.state;
                 if (OpenHABRest.SqlColor != Brushes.Red)
                 {
                     OpenHABRest.SqlColor = Brushes.Red;

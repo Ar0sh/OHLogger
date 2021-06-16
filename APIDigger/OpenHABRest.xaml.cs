@@ -30,6 +30,7 @@ namespace APIDigger
         private Thread LogInSql = null;
         private bool _sqlloggedIn = false;
         private bool _apiloggedIn = false;
+        private bool _resetSqlInfo = true;
 
         public static List<Items> ItemsList = new List<Items>();
         public static string conStr;
@@ -151,7 +152,10 @@ namespace APIDigger
                 statSqlTab.Text = SqlTabMessage;
                 statSqlTabItem.Visibility = Visibility.Visible;
             }
-            SqlStoreTask = new Thread(StoreSqlCall);
+            SqlStoreTask = new Thread(StoreSqlCall)
+            {
+                IsBackground = true
+            };
             SqlStoreTask.Start();
         }
 
@@ -168,7 +172,10 @@ namespace APIDigger
             TableRefresh.Start();
             if(SqlStoreTask == null && btnSqlLogin.Content.ToString() != "Connect")
             {
-                SqlStoreTask = new Thread(StoreSqlCall);
+                SqlStoreTask = new Thread(StoreSqlCall)
+                {
+                    IsBackground = true
+                };
                 SqlStoreTask.Start();
             }
         }
@@ -204,6 +211,7 @@ namespace APIDigger
 
                     });
                     Thread.Sleep(Properties.Settings.Default.UpdateInterval * 1000);
+                    
                 }
                 catch
                 {
@@ -225,7 +233,7 @@ namespace APIDigger
         {
             while(SqlStoreTask.IsAlive)
             {
-                if(ItemsList.Count > 0)
+                if(ItemsList.Count > 0 && !_resetSqlInfo)
                 { 
                     dataSqlClasses.StoreValuesToSql();
                     statSqlCon.Dispatcher.Invoke(() =>
@@ -235,12 +243,17 @@ namespace APIDigger
                 }
                 else
                 {
-                    SqlMessages = "SQL Connected";
-                    SqlColor = Brushes.Green;
                     if(!_apiloggedIn)
                     {
                         SqlErrMessage = "No API Data";
                         SqlErrColor = Brushes.Orange;
+                        _resetSqlInfo = true;
+                    }
+                    else if (_resetSqlInfo)
+                    {
+                        SqlMessages = "SQL Connected";
+                        SqlColor = Brushes.Green;
+                        _resetSqlInfo = false;
                     }
                     statSqlCon.Dispatcher.Invoke(() =>
                     {
@@ -266,6 +279,8 @@ namespace APIDigger
                 Dispatcher.Invoke(() =>
                 {
                     UpdateSqlUserPass("UserAccepted");
+                    SqlMessages = "SQL Connected";
+                    SqlColor = Brushes.Green;
                     UpdateGui(true, false, true);
                     btnSqlLogin.Content = "Disconnect";
                 });
@@ -313,7 +328,7 @@ namespace APIDigger
                         tbApiIp.IsEnabled = false;
                         SqlErrMessage = "Waiting for API data";
                         SqlErrColor = Brushes.LightGreen;
-                        if(tbApiIp.Background == Brushes.Red || tbApiIp.Background == Brushes.White)
+                        if(tbApiIp.Background == Brushes.White || tbApiIp.Background == Brushes.Red)
                             tbApiIp.Background = Brushes.Green;
                         UpdateGui(false, false, true);
                         _apiloggedIn = true;
@@ -393,12 +408,18 @@ namespace APIDigger
         {
             if (_sqlloggedIn)
             {
-                if(TableRefresh != null)
+                if (TableRefresh != null)
+                {
                     TableRefresh.Abort();
+                }
                 if(SqlStoreTask != null)
+                {
                     SqlStoreTask.Abort();
+                }
                 if (LogInSql != null)
+                {
                     LogInSql.Abort();
+                }
                 if(ChkRememberSql.IsChecked == false)
                 {
                     Properties.Settings.Default.UserSql = "";
@@ -471,6 +492,8 @@ namespace APIDigger
             { 
                 try
                 {
+                    if (Convert.ToInt32(_ipIn.Split(':')[1]) > 65535)
+                        return false;
                     return _ipIn.Contains(':') && IPAddress.TryParse(_ipIn.Split(':')[0], out _);
                 }
                 catch
