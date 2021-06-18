@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -21,6 +22,30 @@ namespace APIDigger.Methods
                 return true;
             }
         }
+
+        public static bool CheckValidIp(string _ipIn, bool checkPort = false)
+        {
+            if (checkPort)
+            {
+                try
+                {
+                    if (Convert.ToInt32(_ipIn.Split(':')[1]) > 65535)
+                        return false;
+                    return _ipIn.Contains(':') && IPAddress.TryParse(_ipIn.Split(':')[0], out _);
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (_ipIn.Contains(":"))
+                    _ipIn = _ipIn.Split(':')[0];
+                return IPAddress.TryParse(_ipIn, out _);
+            }
+        }
+
         public static void SaveUpdateInterval(string input)
         {
             Properties.Settings.Default.UpdateInterval = Convert.ToInt32(input);

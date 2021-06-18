@@ -25,9 +25,9 @@ namespace APIDigger
         private readonly List<string> Items = new List<string>();
         private readonly APILookup getApiData = new APILookup();
         private readonly DataSqlClasses dataSqlClasses = new DataSqlClasses();
-        private Thread TableRefresh = null;
-        private Thread SqlStoreTask = null;
-        private Thread LogInSql = null;
+        private CancellationTokenSource _apiTokenSource = new CancellationTokenSource();
+        private CancellationTokenSource _sqlTokenSource = new CancellationTokenSource();
+        private CancellationTokenSource _loginTokenSource = new CancellationTokenSource();
         private bool _sqlloggedIn = false;
         private bool _apiloggedIn = false;
         private bool _resetSqlInfo = true;
@@ -94,7 +94,7 @@ namespace APIDigger
 
         void UpdateSqlUserPass(string _LoggedIn)
         {
-            switch(_LoggedIn)
+            switch (_LoggedIn)
             {
                 case "UserAccepted":
                     userSql.IsEnabled = false;
@@ -109,7 +109,7 @@ namespace APIDigger
                 case "UserNotAccepted":
                     Dispatcher.Invoke(() =>
                     {
-                        tbSqlIp.Background = !CheckValidIp(tbSqlIp.Text) ? Brushes.Red : Brushes.Orange;
+                        tbSqlIp.Background = !Functions.CheckValidIp(tbSqlIp.Text) ? Brushes.Red : Brushes.Orange;
                         tbDatabaseName.Background = tbDatabaseName.Text != "" ? Brushes.Orange : Brushes.Red;
                         userSql.Background = userSql.Text != "" ? Brushes.Orange : Brushes.Red;
                         passSql.Background = passSql.Password != "" ? Brushes.Orange : Brushes.Red;
@@ -136,7 +136,7 @@ namespace APIDigger
                     tbDatabaseName.Background = Brushes.White;
                     break;
             }
-    }
+        }
 
         void RunSql()
         {
@@ -152,11 +152,7 @@ namespace APIDigger
                 statSqlTab.Text = SqlTabMessage;
                 statSqlTabItem.Visibility = Visibility.Visible;
             }
-            SqlStoreTask = new Thread(StoreSqlCall)
-            {
-                IsBackground = true
-            };
-            SqlStoreTask.Start();
+            Task.Run(StoreSqlCall, _sqlTokenSource.Token);
         }
 
         void RunApi()
@@ -168,21 +164,12 @@ namespace APIDigger
             API_UpdateDict();
             getApiData.PopulateDataTable();
             dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
-            TableRefresh = new Thread(Update);
-            TableRefresh.Start();
-            if(SqlStoreTask == null && btnSqlLogin.Content.ToString() != "Connect")
-            {
-                SqlStoreTask = new Thread(StoreSqlCall)
-                {
-                    IsBackground = true
-                };
-                SqlStoreTask.Start();
-            }
+            Task.Run(Update, _apiTokenSource.Token);
         }
 
-        void Update()
+        async Task Update()
         {
-            while (TableRefresh.IsAlive)
+            while (!_apiTokenSource.Token.IsCancellationRequested)
             {
                 try
                 {
@@ -195,7 +182,7 @@ namespace APIDigger
                     }
                     else
                         API_UpdateDict(true);
-                    dgSensors.Dispatcher.Invoke(() =>
+                    Dispatcher.Invoke(() =>
                     {
                         if (dgSensors.IsKeyboardFocusWithin)
                         {
@@ -204,14 +191,9 @@ namespace APIDigger
                         }
                         else
                             dgSensors.Items.Refresh();
-                    });
-                    statApiCon.Dispatcher.Invoke(() =>
-                    {
                         UpdateGui(false, true, false);
-
                     });
-                    Thread.Sleep(Properties.Settings.Default.UpdateInterval * 1000);
-                    
+                    await Task.Delay(Properties.Settings.Default.UpdateInterval * 1000);
                 }
                 catch
                 {
@@ -229,9 +211,9 @@ namespace APIDigger
 
         }
 
-        void StoreSqlCall()
+        async Task StoreSqlCall()
         {
-            while(SqlStoreTask.IsAlive)
+            while(!_sqlTokenSource.Token.IsCancellationRequested)
             {
                 if(ItemsList.Count > 0 && !_resetSqlInfo)
                 { 
@@ -260,7 +242,7 @@ namespace APIDigger
                         UpdateGui(true, false, true);
                     });
                 }
-                Thread.Sleep(59400);
+                await Task.Delay(9400);
             }
         }
 
@@ -268,7 +250,7 @@ namespace APIDigger
         {
             try
             {
-                if (!CheckValidIp(_Ip))
+                if (!Functions.CheckValidIp(_Ip))
                 {
                     throw new Exception("Wrong IP");
                 }
@@ -286,10 +268,7 @@ namespace APIDigger
                 });
                 _sqlloggedIn = true;
                 dataSqlClasses.GetSqlTables();
-                Dispatcher.Invoke(() =>
-                {
-                    RunSql();
-                });
+                Task.Run(RunSql);
             }
             catch (Exception ex)
             {
@@ -315,8 +294,9 @@ namespace APIDigger
 
         private void ConnectApi(bool LogIn = true)
         {
-            if(LogIn && CheckValidIp(tbApiIp.Text, true))
+            if(LogIn && Functions.CheckValidIp(tbApiIp.Text, true))
             {
+                _apiTokenSource = new CancellationTokenSource();
                 Functions.SaveApiDetails(tbApiIp.Text, ChkRememberApi.IsChecked);
                 getApiData.RestConn(true);
                 if(_CheckApiCon)
@@ -345,8 +325,7 @@ namespace APIDigger
             {
                 if(_apiloggedIn)
                 {
-                    if (TableRefresh != null)
-                        TableRefresh.Abort();
+                    _apiTokenSource.Cancel();
                     getApiData.ItemsTable.Clear();
                     ItemsList.Clear();
                     btnConnectApi.IsEnabled = true;
@@ -368,18 +347,19 @@ namespace APIDigger
             }
         }
 
-        private void LogInOutSql(bool LogIn = true)
+        private async void LogInOutSql(bool LogIn = true)
         {
             if(LogIn)
             {
-                if(CheckValidIp(tbSqlIp.Text) && tbDatabaseName.Text != "" && userSql.Text != "" && passSql.Password != "")
-                { 
+                if(Functions.CheckValidIp(tbSqlIp.Text) && tbDatabaseName.Text != "" && userSql.Text != "" && passSql.Password != "")
+                {
+                    _sqlTokenSource = new CancellationTokenSource();
+                    _loginTokenSource = new CancellationTokenSource();
                     btnSqlLogin.IsEnabled = false;
                     btnSqlLogin.Content = "Connecting...";
                     string _Ip = tbSqlIp.Text;
                     Functions.SaveSqlUser(_Ip, tbDatabaseName.Text, userSql.Text, passSql.Password, ChkRememberSql.IsChecked);
-                    LogInSql = new Thread(() => LogInThread(_Ip));
-                    LogInSql.Start();
+                    await Task.Run(() => LogInThread(_Ip), _loginTokenSource.Token);
                 }
                 else
                 {
@@ -390,10 +370,8 @@ namespace APIDigger
             {
                 if (_sqlloggedIn)
                 {
-                    if(SqlStoreTask != null)
-                        SqlStoreTask.Abort();
-                    if (LogInSql != null)
-                        LogInSql.Abort();
+                    _sqlTokenSource.Cancel();
+                    _loginTokenSource.Cancel();
                     UpdateSqlUserPass("LogOut");
                     SqlMessages = "SQL Disconnected";
                     SqlColor = Brushes.Red;
@@ -406,20 +384,11 @@ namespace APIDigger
 
         private void Window_Closed(object sender, EventArgs e)
         {
+            _apiTokenSource.Cancel();
+            _sqlTokenSource.Cancel();
+            _loginTokenSource.Cancel();
             if (_sqlloggedIn)
             {
-                if (TableRefresh != null)
-                {
-                    TableRefresh.Abort();
-                }
-                if(SqlStoreTask != null)
-                {
-                    SqlStoreTask.Abort();
-                }
-                if (LogInSql != null)
-                {
-                    LogInSql.Abort();
-                }
                 if(ChkRememberSql.IsChecked == false)
                 {
                     Properties.Settings.Default.UserSql = "";
@@ -436,6 +405,7 @@ namespace APIDigger
                 }
                 conn.Close();
             }
+            Application.Current.Shutdown();
         }
 
         private void TbUpdateSpeed_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -486,45 +456,11 @@ namespace APIDigger
             Properties.Settings.Default.Save();
         }
 
-        bool CheckValidIp(string _ipIn, bool checkPort = false)
-        {
-            if(checkPort)
-            { 
-                try
-                {
-                    if (Convert.ToInt32(_ipIn.Split(':')[1]) > 65535)
-                        return false;
-                    return _ipIn.Contains(':') && IPAddress.TryParse(_ipIn.Split(':')[0], out _);
-                }
-                catch
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                if (_ipIn.Contains(":"))
-                    _ipIn = _ipIn.Split(':')[0];
-                return IPAddress.TryParse(_ipIn, out _);
-            }
-        }
+        
 
         private void TbSqlIp_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !IsTextAllowed(e.Text, @"[^0-9:.]");
-        }
-
-        private static bool IsTextAllowed(string Text, string AllowedRegex)
-        {
-            try
-            {
-                var regex = new Regex(AllowedRegex);
-                return !regex.IsMatch(Text);
-            }
-            catch
-            {
-                return true;
-            }
+            e.Handled = !Functions.IsTextAllowed(e.Text, @"[^0-9:.]");
         }
 
         #region NumericUpDown
