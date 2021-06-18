@@ -1,4 +1,4 @@
-﻿using APIDigger.Classes;
+﻿using OHDataLogger.Classes;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Media;
 
-namespace APIDigger.Methods
+namespace OHDataLogger.Methods
 {
     public class APILookup
     {

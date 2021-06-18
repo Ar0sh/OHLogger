@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace APIDigger.Properties {
+namespace OHDataLogger.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -140,6 +140,18 @@ namespace APIDigger.Properties {
             }
             set {
                 this["AutoLogon"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string HashedPass {
+            get {
+                return ((string)(this["HashedPass"]));
+            }
+            set {
+                this["HashedPass"] = value;
             }
         }
     }

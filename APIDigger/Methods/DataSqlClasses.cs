@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
 using System.Data.Sql;
-using APIDigger.Classes;
+using OHDataLogger.Classes;
 using System.Windows;
 using System.Windows.Media;
 
-namespace APIDigger.Methods
+namespace OHDataLogger.Methods
 {
     public class DataSqlClasses
     {

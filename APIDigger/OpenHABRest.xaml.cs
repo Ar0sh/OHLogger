@@ -1,5 +1,5 @@
-﻿using APIDigger.Classes;
-using APIDigger.Methods;
+﻿using OHDataLogger.Classes;
+using OHDataLogger.Methods;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -8,8 +8,8 @@ using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,7 +18,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace APIDigger
+namespace OHDataLogger
 {
     public partial class OpenHABRest : Window
     {
@@ -51,7 +51,14 @@ namespace APIDigger
             InitializeComponent();
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
             UpdateGui(true, true, true);
-            Title = "Openhab REST Items"; 
+            Title = "OpenHAB DataLogger";
+            if (Properties.Settings.Default.RememberApiLogin)
+            {
+                tbApiIp.Text = Properties.Settings.Default.ApiAddr;
+                ChkRememberApi.IsChecked = true;
+                //if (Properties.Settings.Default.AutoLogon == true)
+                BtnConnectApi_Click(null, null);
+            }
             if (Properties.Settings.Default.RememberSqlLogin)
             {
                 userSql.Text = Properties.Settings.Default.UserSql;
@@ -63,13 +70,6 @@ namespace APIDigger
                 ChkRememberSql.IsChecked = true;
                 //if(Properties.Settings.Default.AutoLogon == true) 
                 BtnLogInSql_Click(null, null);
-            }
-            if(Properties.Settings.Default.RememberApiLogin)
-            {
-                tbApiIp.Text = Properties.Settings.Default.ApiAddr;
-                ChkRememberApi.IsChecked = true;
-                //if (Properties.Settings.Default.AutoLogon == true)
-                BtnConnectApi_Click(null, null);
             }
         }
 
@@ -242,7 +242,7 @@ namespace APIDigger
                         UpdateGui(true, false, true);
                     });
                 }
-                await Task.Delay(9400);
+                await Task.Delay(59400);
             }
         }
 

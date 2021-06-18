@@ -1,6 +1,6 @@
 ﻿using System.Windows.Media;
 
-namespace APIDigger.Methods
+namespace OHDataLogger.Methods
 {
     public class SensorValues
     {

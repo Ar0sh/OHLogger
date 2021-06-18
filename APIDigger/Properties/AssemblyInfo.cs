@@ -7,11 +7,11 @@ using System.Windows;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("APIDigger")]
+[assembly: AssemblyTitle("OHDataLogger")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Fulrix")]
-[assembly: AssemblyProduct("APIDigger")]
+[assembly: AssemblyProduct("OHDataLogger")]
 [assembly: AssemblyCopyright("Copyright Frode Ulriksen ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
