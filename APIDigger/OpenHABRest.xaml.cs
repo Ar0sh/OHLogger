@@ -25,9 +25,12 @@ namespace OHDataLogger
         private readonly List<string> Items = new List<string>();
         private readonly APILookup getApiData = new APILookup();
         private readonly DataSqlClasses dataSqlClasses = new DataSqlClasses();
-        private CancellationTokenSource _apiTokenSource = new CancellationTokenSource();
-        private CancellationTokenSource _sqlTokenSource = new CancellationTokenSource();
-        private CancellationTokenSource _loginTokenSource = new CancellationTokenSource();
+        //private CancellationTokenSource _apiTokenSource = new CancellationTokenSource();
+        //private CancellationTokenSource _sqlTokenSource = new CancellationTokenSource();
+        //private CancellationTokenSource _loginTokenSource = new CancellationTokenSource();
+        private Thread TableRefresh = null;
+        private Thread SqlStoreTask = null;
+        private Thread LogInSql = null;
         private bool _sqlloggedIn = false;
         private bool _apiloggedIn = false;
         private bool _resetSqlInfo = true;
@@ -152,7 +155,12 @@ namespace OHDataLogger
                 statSqlTab.Text = SqlTabMessage;
                 statSqlTabItem.Visibility = Visibility.Visible;
             }
-            Task.Run(StoreSqlCall, _sqlTokenSource.Token);
+            SqlStoreTask = new Thread(StoreSqlCall)
+            {
+                IsBackground = true
+            };
+            SqlStoreTask.Start();
+            //Task.Run(StoreSqlCall, _sqlTokenSource.Token);
         }
 
         void RunApi()
@@ -164,12 +172,22 @@ namespace OHDataLogger
             API_UpdateDict();
             getApiData.PopulateDataTable();
             dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
-            Task.Run(Update, _apiTokenSource.Token);
+            //Task.Run(Update, _apiTokenSource.Token);
+            TableRefresh = new Thread(Update);
+            TableRefresh.Start();
+            if (SqlStoreTask == null && btnSqlLogin.Content.ToString() != "Connect")
+            {
+                SqlStoreTask = new Thread(StoreSqlCall)
+                {
+                    IsBackground = true
+                };
+                SqlStoreTask.Start();
+            }
         }
 
-        async Task Update()
+        void Update() //async Task Update()
         {
-            while (!_apiTokenSource.Token.IsCancellationRequested)
+            while (TableRefresh.IsAlive) //(!_apiTokenSource.Token.IsCancellationRequested)
             {
                 try
                 {
@@ -193,7 +211,8 @@ namespace OHDataLogger
                             dgSensors.Items.Refresh();
                         UpdateGui(false, true, false);
                     });
-                    await Task.Delay(Properties.Settings.Default.UpdateInterval * 1000);
+                    Thread.Sleep(Properties.Settings.Default.UpdateInterval * 1000);
+                    //await Task.Delay(Properties.Settings.Default.UpdateInterval * 1000);
                 }
                 catch
                 {
@@ -211,9 +230,9 @@ namespace OHDataLogger
 
         }
 
-        async Task StoreSqlCall()
+        void StoreSqlCall()//async Task StoreSqlCall()
         {
-            while(!_sqlTokenSource.Token.IsCancellationRequested)
+            while (SqlStoreTask.IsAlive) //(!_sqlTokenSource.Token.IsCancellationRequested)
             {
                 if(ItemsList.Count > 0 && !_resetSqlInfo)
                 { 
@@ -242,7 +261,8 @@ namespace OHDataLogger
                         UpdateGui(true, false, true);
                     });
                 }
-                await Task.Delay(59400);
+                Thread.Sleep(59400);
+                //await Task.Delay(59400);
             }
         }
 
@@ -268,7 +288,11 @@ namespace OHDataLogger
                 });
                 _sqlloggedIn = true;
                 dataSqlClasses.GetSqlTables();
-                Task.Run(RunSql);
+                Dispatcher.Invoke(() =>
+                {
+                    RunSql();
+                });
+                //Task.Run(RunSql);
             }
             catch (Exception ex)
             {
@@ -296,7 +320,7 @@ namespace OHDataLogger
         {
             if(LogIn && Functions.CheckValidIp(tbApiIp.Text, true))
             {
-                _apiTokenSource = new CancellationTokenSource();
+                //_apiTokenSource = new CancellationTokenSource();
                 Functions.SaveApiDetails(tbApiIp.Text, ChkRememberApi.IsChecked);
                 getApiData.RestConn(true);
                 if(_CheckApiCon)
@@ -325,7 +349,9 @@ namespace OHDataLogger
             {
                 if(_apiloggedIn)
                 {
-                    _apiTokenSource.Cancel();
+                    //_apiTokenSource.Cancel();
+                    if (TableRefresh != null)
+                        TableRefresh.Abort();
                     getApiData.ItemsTable.Clear();
                     ItemsList.Clear();
                     btnConnectApi.IsEnabled = true;
@@ -347,19 +373,21 @@ namespace OHDataLogger
             }
         }
 
-        private async void LogInOutSql(bool LogIn = true)
+        private void LogInOutSql(bool LogIn = true) //async void LogInOutSql(bool LogIn = true)
         {
             if(LogIn)
             {
                 if(Functions.CheckValidIp(tbSqlIp.Text) && tbDatabaseName.Text != "" && userSql.Text != "" && passSql.Password != "")
                 {
-                    _sqlTokenSource = new CancellationTokenSource();
-                    _loginTokenSource = new CancellationTokenSource();
+                    //_sqlTokenSource = new CancellationTokenSource();
+                    //_loginTokenSource = new CancellationTokenSource();
                     btnSqlLogin.IsEnabled = false;
                     btnSqlLogin.Content = "Connecting...";
                     string _Ip = tbSqlIp.Text;
                     Functions.SaveSqlUser(_Ip, tbDatabaseName.Text, userSql.Text, passSql.Password, ChkRememberSql.IsChecked);
-                    await Task.Run(() => LogInThread(_Ip), _loginTokenSource.Token);
+                    LogInSql = new Thread(() => LogInThread(_Ip));
+                    LogInSql.Start();
+                    //await Task.Run(() => LogInThread(_Ip), _loginTokenSource.Token);
                 }
                 else
                 {
@@ -370,8 +398,12 @@ namespace OHDataLogger
             {
                 if (_sqlloggedIn)
                 {
-                    _sqlTokenSource.Cancel();
-                    _loginTokenSource.Cancel();
+                    //_sqlTokenSource.Cancel();
+                    //_loginTokenSource.Cancel();
+                    if (SqlStoreTask != null)
+                        SqlStoreTask.Abort();
+                    if (LogInSql != null)
+                        LogInSql.Abort();
                     UpdateSqlUserPass("LogOut");
                     SqlMessages = "SQL Disconnected";
                     SqlColor = Brushes.Red;
@@ -384,12 +416,24 @@ namespace OHDataLogger
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            _apiTokenSource.Cancel();
-            _sqlTokenSource.Cancel();
-            _loginTokenSource.Cancel();
+            //_apiTokenSource.Cancel();
+            //_sqlTokenSource.Cancel();
+            //_loginTokenSource.Cancel();
             if (_sqlloggedIn)
             {
-                if(ChkRememberSql.IsChecked == false)
+                if (TableRefresh != null)
+                {
+                    TableRefresh.Abort();
+                }
+                if (SqlStoreTask != null)
+                {
+                    SqlStoreTask.Abort();
+                }
+                if (LogInSql != null)
+                {
+                    LogInSql.Abort();
+                }
+                if (ChkRememberSql.IsChecked == false)
                 {
                     Properties.Settings.Default.UserSql = "";
                     Properties.Settings.Default.PassSql = "";
