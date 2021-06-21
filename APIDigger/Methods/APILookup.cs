@@ -65,6 +65,7 @@ namespace OHDataLogger.Methods
                             {
                                 dr[2] = state;
                                 dr[3] = DateTime.Now;
+                                //dr[3] = OpenHABRest.dtApi;
                             }
                         }
                     }

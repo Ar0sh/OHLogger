@@ -80,8 +80,9 @@ namespace OHDataLogger.Methods
                     Tables.Add(rd[0].ToString());
                 }
             }
-            catch
-            { 
+            catch(Exception ex)
+            {
+                Logger.LogMessage(ex.Message, ErrorLevel.SQLTABLE);
             }
             finally
             {
@@ -90,62 +91,72 @@ namespace OHDataLogger.Methods
         }
         public void StoreValuesToSql()
         {
-            string query = "DECLARE @Time AS DATETIME2(3)\nSET @Time = GETUTCDATE()\n";
-            List<Items> ItemsListCopy = OpenHABRest.ItemsList.ToList();
-            string value;
-            foreach (Items item in ItemsListCopy)
-            {
-                if (item.type.ToLower() == "switch" || item.type.ToLower() == "color")
-                {
-                    value = "'" + item.state.Split(' ')[0] + "'";
-                }
-                else if (item.type.ToLower() == "datetime")
-                {
-                    value = "'" + item.state.Split('+')[0] + "'";
-                }
-                else if (item.type.ToLower() == "string")
-                {
-                    value = "'" + item.state + "'";
-                }
-                else
-                {
-                    value = item.state.Split(' ')[0];
-                }
-                query += "insert into " + item.name + " (time, value) values (@Time, " + value + ") \n";
-            }
-
-            SqlCommand sqlCommand = new SqlCommand(query, OpenHABRest.conn);
             try
             {
-                OpenHABRest.conn.Open();
-                sqlCommand.ExecuteNonQuery(); 
-                if (OpenHABRest.SqlErrColor != Brushes.Green)
+                string query = "DECLARE @Time AS DATETIME2(3)\nSET @Time = Convert(DateTime2, '" + OpenHABRest.dtSql.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss.000") + "')\n";                    //GETUTCDATE()\n";
+                //Convert(DateTime2, '" OpenHABRest.dtSql.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss.000") + "')\n";
+                List<Items> ItemsListCopy = OpenHABRest.ItemsList.ToList();
+                string value;
+                Console.WriteLine(OpenHABRest.dtSql.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss.000"));
+                foreach (Items item in ItemsListCopy)
                 {
-                    OpenHABRest.SqlErrColor = Brushes.Green;
-                    OpenHABRest.SqlErrMessage = "No SQL Errors";
+                    if (item.type.ToLower() == "switch" || item.type.ToLower() == "color")
+                    {
+                        value = "'" + item.state.Split(' ')[0] + "'";
+                    }
+                    else if (item.type.ToLower() == "datetime")
+                    {
+                        value = "'" + item.state.Split('+')[0] + "'";
+                    }
+                    else if (item.type.ToLower() == "string")
+                    {
+                        value = "'" + item.state + "'";
+                    }
+                    else
+                    {
+                        value = item.state.Split(' ')[0];
+                    }
+                    query += "insert into " + item.name + " (time, value) values (@Time, " + value + ") \n";
                 }
-                if (OpenHABRest.SqlColor != Brushes.Green)
+
+                SqlCommand sqlCommand = new SqlCommand(query, OpenHABRest.conn);
+                try
                 {
-                    OpenHABRest.SqlColor = Brushes.Green;
-                    OpenHABRest.SqlMessages = "SQL Connected";
+                    OpenHABRest.conn.Open();
+                    sqlCommand.ExecuteNonQuery();
+                    if (OpenHABRest.SqlErrColor != Brushes.Green)
+                    {
+                        OpenHABRest.SqlErrColor = Brushes.Green;
+                        OpenHABRest.SqlErrMessage = "No SQL Errors";
+                    }
+                    if (OpenHABRest.SqlColor != Brushes.Green && OpenHABRest._sqlloggedIn)
+                    {
+                        OpenHABRest.SqlColor = Brushes.Green;
+                        OpenHABRest.SqlMessages = "SQL Connected";
+                    }
+                }
+                catch (SqlException sqlEx)
+                {
+                    if (OpenHABRest.SqlErrColor != Brushes.Red)
+                    {
+                        OpenHABRest.SqlErrColor = Brushes.Red;
+                        OpenHABRest.SqlErrMessage = sqlEx.Message.Substring(0, 40) + "...";
+                    }
+                    if (OpenHABRest.SqlColor != Brushes.Red)
+                    {
+                        OpenHABRest.SqlColor = Brushes.Red;
+                        OpenHABRest.SqlMessages = "SQL Error";
+                    }
+                    Logger.LogMessage(sqlEx.Message, ErrorLevel.SQL);
+                }
+                finally
+                {
+                    OpenHABRest.conn.Close();
                 }
             }
-            catch(SqlException sqlEx)
+            catch(Exception ex)
             {
-                if(OpenHABRest.SqlErrColor != Brushes.Red)
-                {
-                    OpenHABRest.SqlErrColor = Brushes.Red;
-                    OpenHABRest.SqlErrMessage = sqlEx.Message.Substring(0, 40) + "...";
-                }
-                if (OpenHABRest.SqlColor != Brushes.Red)
-                {
-                    OpenHABRest.SqlColor = Brushes.Red;
-                    OpenHABRest.SqlMessages = "SQL Error";
-                }
-            }
-            finally
-            {
-                OpenHABRest.conn.Close();
+                Logger.LogMessage(ex.Message, ErrorLevel.SQL);
             }
         }
     }

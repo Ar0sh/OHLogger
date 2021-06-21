@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
@@ -31,10 +32,11 @@ namespace OHDataLogger
         private Thread TableRefresh = null;
         private Thread SqlStoreTask = null;
         private readonly Thread LogInSql = null;
-        private bool _sqlloggedIn = false;
+        public static bool _sqlloggedIn = false;
         private bool _apiloggedIn = false;
         private bool _resetSqlInfo = true;
 
+        public static DateTime dtSql = new DateTime();
         public static List<Items> ItemsList = new List<Items>();
         public static string conStr;
         public static SqlConnection conn;
@@ -52,6 +54,8 @@ namespace OHDataLogger
         public OpenHABRest()
         {
             InitializeComponent();
+            if (!File.Exists(Directory.GetCurrentDirectory() + "/LogFile/LogFile.txt"))
+                File.Create(Directory.GetCurrentDirectory() + "/LogFile/LogFile.txt");
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
             UpdateGui(true, true, true);
             Title = "OpenHAB DataLogger";
@@ -160,7 +164,6 @@ namespace OHDataLogger
                 IsBackground = true
             };
             SqlStoreTask.Start();
-            //Task.Run(StoreSqlCall, _sqlTokenSource.Token);
         }
 
         void RunApi()
@@ -172,7 +175,6 @@ namespace OHDataLogger
             API_UpdateDict();
             getApiData.PopulateDataTable();
             dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
-            //Task.Run(Update, _apiTokenSource.Token);
             TableRefresh = new Thread(Update);
             TableRefresh.Start();
             if (SqlStoreTask == null && btnSqlLogin.Content.ToString() != "Connect")
@@ -185,15 +187,10 @@ namespace OHDataLogger
             }
         }
 
-        void Update() //async Task Update()
+        void Update()
         {
-            while (!_apiTokenSource.Token.IsCancellationRequested) //TableRefresh.IsAlive) //(!_apiTokenSource.Token.IsCancellationRequested)
+            while (!_apiTokenSource.Token.IsCancellationRequested)
             {
-                //if(_apiTokenSource.Token.IsCancellationRequested && TableRefresh != null)
-                //{
-                //    TableRefresh.Abort();
-                //    return;
-                //}
                 try
                 {
                     Items.Clear();
@@ -216,13 +213,11 @@ namespace OHDataLogger
                             dgSensors.Items.Refresh();
                         UpdateGui(false, true, false);
                     });
-                    //Thread.Sleep(Properties.Settings.Default.UpdateInterval * 1000);
-                    //await Task.Delay(Properties.Settings.Default.UpdateInterval * 1000);
                     var _apiCancellationTriggered = _apiTokenSource.Token.WaitHandle.WaitOne(Properties.Settings.Default.UpdateInterval * 1000);
                 }
-                catch
+                catch(Exception ex)
                 {
-
+                    Logger.LogMessage(ex.Message, ErrorLevel.API);
                 }
             }
         }
@@ -236,45 +231,55 @@ namespace OHDataLogger
 
         }
 
-        void StoreSqlCall()//async Task StoreSqlCall()
+        void StoreSqlCall()
         {
-            while (!_sqlTokenSource.Token.IsCancellationRequested) //(SqlStoreTask.IsAlive) //(!_sqlTokenSource.Token.IsCancellationRequested)
+            bool watcher = false;
+            Stopwatch stopW = new Stopwatch();
+            while (!_sqlTokenSource.Token.IsCancellationRequested)
             {
-                //if (_sqlTokenSource.Token.IsCancellationRequested && SqlStoreTask != null)
-                //{
-                //    SqlStoreTask.Abort();
-                //    return;
-                //}
-                if (ItemsList.Count > 0 && !_resetSqlInfo)
+                if(watcher)
                 { 
-                    dataSqlClasses.StoreValuesToSql();
-                    statSqlCon.Dispatcher.Invoke(() =>
+                    var _sqlCancellationTriggered = _sqlTokenSource.Token.WaitHandle.WaitOne(10000 - (int)stopW.Elapsed.TotalMilliseconds);
+                    stopW.Restart();
+                    dtSql = DateTime.Now;
+                    try
                     {
-                        UpdateGui(true, false, true);
-                    });
-                }
-                else
-                {
-                    if(!_apiloggedIn)
-                    {
-                        SqlErrMessage = "No API Data";
-                        SqlErrColor = Brushes.Orange;
-                        _resetSqlInfo = true;
+                        if (ItemsList.Count > 0 && !_resetSqlInfo)
+                        {
+                            dataSqlClasses.StoreValuesToSql();
+                            statSqlCon.Dispatcher.Invoke(() =>
+                            {
+                                UpdateGui(true, false, true);
+                            });
+                        }
+                        else
+                        {
+                            if (!_apiloggedIn)
+                            {
+                                SqlErrMessage = "No API Data";
+                                SqlErrColor = Brushes.Orange;
+                                _resetSqlInfo = true;
+                            }
+                            else if (_resetSqlInfo)
+                            {
+                                SqlMessages = "SQL Connected";
+                                SqlColor = Brushes.Green;
+                                _resetSqlInfo = false;
+                            }
+                            statSqlCon.Dispatcher.Invoke(() =>
+                            {
+                                UpdateGui(true, false, true);
+                            });
+                        }
                     }
-                    else if (_resetSqlInfo)
+                    catch (Exception ex)
                     {
-                        SqlMessages = "SQL Connected";
-                        SqlColor = Brushes.Green;
-                        _resetSqlInfo = false;
+                        Logger.LogMessage(ex.Message, ErrorLevel.SQL);
                     }
-                    statSqlCon.Dispatcher.Invoke(() =>
-                    {
-                        UpdateGui(true, false, true);
-                    });
+                    stopW.Stop();
                 }
-                var _sqlCancellationTriggered = _sqlTokenSource.Token.WaitHandle.WaitOne(94000);
-                //Thread.Sleep(59400);
-                //await Task.Delay(59400);
+                else if (DateTime.Now.Second % 10 == 0 && !watcher)
+                    watcher = true;
             }
         }
 
@@ -314,7 +319,8 @@ namespace OHDataLogger
                 }
                 else
                     UpdateSqlUserPass("UserNotAccepted");
-            }
+                Logger.LogMessage(ex.Message, ErrorLevel.LOGIN);
+        }
             finally
             {
                 if (conn != null)
