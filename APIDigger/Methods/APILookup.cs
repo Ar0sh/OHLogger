@@ -64,8 +64,8 @@ namespace OHDataLogger.Methods
                             if (dr["Name"].ToString() == ItemsDict[name].GetName())
                             {
                                 dr[2] = state;
-                                dr[3] = DateTime.Now;
-                                //dr[3] = OpenHABRest.dtApi;
+                                //dr[3] = DateTime.Now;
+                                dr[3] = OpenHABRest.dtApi;
                             }
                         }
                     }
