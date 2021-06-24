@@ -17,6 +17,7 @@ namespace OHDataLogger.Methods
     {
         public SortedDictionary<string, SensorValues> ItemsDict = new SortedDictionary<string, SensorValues>();
         public DataTable ItemsTable = new DataTable("Items");
+        bool tableTest = false;
         private readonly List<string> exclude = new List<string>
         {
             "test",
@@ -50,6 +51,17 @@ namespace OHDataLogger.Methods
         public void UpdateItemsDict()
         {
             RestConn();
+            if (OpenHABRest.ItemsList.Count != ItemsDict.Count)
+            {
+                foreach(Items item in OpenHABRest.ItemsList)
+                {
+                    if(!ItemsDict.ContainsKey(item.name))
+                    { 
+                        ItemsDict.Add(item.name, new SensorValues(item.link, item.state, null, item.editable, item.type, item.name, item.label));
+                        OpenHABRest.AddedSensor.Add(item);
+                    }
+                }
+            }
             foreach (Items item in OpenHABRest.ItemsList)
             {
                 if (!exclude.Contains(item.name))
@@ -88,7 +100,17 @@ namespace OHDataLogger.Methods
                 if(!exclude.Contains(item.name))
                     ItemsTable.Rows.Add(item.name, item.label, item.state, DateTime.Now);
             }
+            if(tableTest)
+            {
+                tableTest = false;
+            }
+        }
 
+        public void UpdateDataTable(List<Items> itemList)
+        {
+            for(int i = 0; i < itemList.Count; i++)
+                if (!exclude.Contains(itemList[i].name))
+                    ItemsTable.Rows.Add(itemList[i].name, itemList[i].label, itemList[i].state, DateTime.Now);
         }
 
         public void RestConn(bool checkCon = false)

@@ -88,6 +88,7 @@
     <Compile Include="Classes\Items.cs" />
     <Compile Include="Classes\ConSQL.cs" />
     <Compile Include="Methods\DataSqlClasses.cs" />
+    <Compile Include="Classes\EditsMade.cs" />
     <Compile Include="Methods\Functions.cs" />
     <Compile Include="Methods\Logger.cs" />
     <Compile Include="OpenHABRest.xaml.cs">

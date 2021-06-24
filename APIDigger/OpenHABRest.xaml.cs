@@ -36,6 +36,7 @@ namespace OHDataLogger
         private bool _apiloggedIn = false;
         private bool _resetSqlInfo = true;
 
+
         public static DateTime dtSql = new DateTime();
         public static DateTime dtApi = new DateTime();
         public static List<Items> ItemsList = new List<Items>();
@@ -50,6 +51,8 @@ namespace OHDataLogger
         public static string SqlTabMessage = "";
         public static Brush SqlTabColor = Brushes.Red;
         public static bool _CheckApiCon;
+        public static List<Items> AddedSensor = new List<Items>();
+        public bool AdSens = false;
 
 
         public OpenHABRest()
@@ -196,8 +199,8 @@ namespace OHDataLogger
             {
                 if(watcher)
                 { 
-                    try
-                    {
+                    //try
+                    //{
                         var _apiCancellationTriggered = _apiTokenSource.Token.WaitHandle.WaitOne((Properties.Settings.Default.UpdateInterval * 1000) - (int)stopW.Elapsed.TotalMilliseconds);
                         stopW.Restart();
                         dtApi = DateTime.Now;
@@ -209,9 +212,22 @@ namespace OHDataLogger
                             dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
                         }
                         else
+                        {
+                            if(AddedSensor.Count != 0)
+                            {
+                                getApiData.UpdateDataTable(AddedSensor);
+                                AddedSensor.Clear();
+                                AdSens = true;
+                            }
                             API_UpdateDict(true);
+                        }
                         Dispatcher.Invoke(() =>
                         {
+                            if(AdSens)
+                            {
+                                dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
+                                AdSens = false;
+                            }
                             if (dgSensors.IsKeyboardFocusWithin)
                             {
                                 dgSensors.Items.Refresh();
@@ -222,11 +238,11 @@ namespace OHDataLogger
                             UpdateGui(false, true, false);
                         });
                         stopW.Stop();
-                    }
-                    catch(Exception ex)
-                    {
-                        Logger.LogMessage(ex.Message, ErrorLevel.API);
-                    }
+                    //}
+                    //catch(Exception ex)
+                    //{
+                    //    Logger.LogMessage(ex.Message, ErrorLevel.API);
+                    //}
                 }
                 else if(DateTime.Now.Second % Properties.Settings.Default.UpdateInterval == 0 && !watcher)
                 {
