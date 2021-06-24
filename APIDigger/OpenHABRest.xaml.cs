@@ -198,9 +198,9 @@ namespace OHDataLogger
             while (!_apiTokenSource.Token.IsCancellationRequested)
             {
                 if(watcher)
-                { 
-                    //try
-                    //{
+                {
+                    try
+                    {
                         var _apiCancellationTriggered = _apiTokenSource.Token.WaitHandle.WaitOne((Properties.Settings.Default.UpdateInterval * 1000) - (int)stopW.Elapsed.TotalMilliseconds);
                         stopW.Restart();
                         dtApi = DateTime.Now;
@@ -238,11 +238,11 @@ namespace OHDataLogger
                             UpdateGui(false, true, false);
                         });
                         stopW.Stop();
-                    //}
-                    //catch(Exception ex)
-                    //{
-                    //    Logger.LogMessage(ex.Message, ErrorLevel.API);
-                    //}
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogMessage(ex.Message, ErrorLevel.API);
+                    }
                 }
                 else if(DateTime.Now.Second % Properties.Settings.Default.UpdateInterval == 0 && !watcher)
                 {
