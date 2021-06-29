@@ -11,14 +11,14 @@ namespace OHDataLogger.Methods
     {
         readonly static string LOG_FILE = Directory.GetCurrentDirectory() + "/LogFile/LogFile.txt";
         readonly static int MaxRolledLogCount = 3;
-        readonly static int MaxLogSize = 1024*10; // 1 * 1024 * 1024; <- small value for testing that it works, you can try yourself, and then use a reasonable size, like 1M-10M
+        readonly static int MaxLogSize = 1024*1024; // 1 * 1024 * 1024; <- small value for testing that it works, you can try yourself, and then use a reasonable size, like 1M-10M
 
         public static void LogMessage(string msg, ErrorLevel errorLevel)
         {
             lock (LOG_FILE) // lock is optional, but.. should this ever be called by multiple threads, it is safer
             {
                 RollLogFile(LOG_FILE);
-                File.AppendAllText(LOG_FILE,"[" + errorLevel + "]" + msg + Environment.NewLine, Encoding.UTF8);
+                File.AppendAllText(LOG_FILE, "[" + DateTime.Now + "]" + "[" + errorLevel + "]" + msg + Environment.NewLine, Encoding.UTF8);
             }
         }
 
