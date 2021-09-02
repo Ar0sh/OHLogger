@@ -11,7 +11,7 @@ namespace OHDataLogger.Methods
     {
         readonly static string LOG_FILE = Directory.GetCurrentDirectory() + "/LogFile/LogFile.txt";
         readonly static int MaxRolledLogCount = 3;
-        readonly static int MaxLogSize = 1024*1024; // 1 * 1024 * 1024; <- small value for testing that it works, you can try yourself, and then use a reasonable size, like 1M-10M
+        readonly static int MaxLogSize = 1024*1024*32; // 1 * 1024 * 1024; <- small value for testing that it works, you can try yourself, and then use a reasonable size, like 1M-10M
 
         public static void LogMessage(string msg, ErrorLevel errorLevel)
         {

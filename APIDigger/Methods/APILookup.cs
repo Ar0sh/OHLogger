@@ -117,18 +117,20 @@ namespace OHDataLogger.Methods
         {
             OpenHABRest._CheckApiCon = true;
             OpenHABRest.ItemsList.Clear();
-            var restClient = new RestClient("http://" + Properties.Settings.Default.ApiAddr + "/");
-            var request = new RestRequest("rest/items/", Method.GET);
-            var queryResult = restClient.Execute<List<Items>>(request).Data;
-            if(queryResult != null && !checkCon)
+            RestClient restClient = new RestClient("http://" + Properties.Settings.Default.ApiAddr + "/");
+            RestRequest request = new RestRequest("rest/items/", Method.GET);
+            List<Items> queryResult = restClient.Execute<List<Items>>(request).Data;
+            if (queryResult != null && !checkCon)
             {
                 foreach (Items item in queryResult)
                 {
                     if (item.type != "Group" && !exclude.Contains(item.name))
+                    {
                         OpenHABRest.ItemsList.Add(item);
+                    }
                 }
-                if(OpenHABRest.ApiColor != Brushes.Green)
-                { 
+                if (OpenHABRest.ApiColor != Brushes.Green)
+                {
                     OpenHABRest.ApiColor = Brushes.Green;
                     OpenHABRest.ApiMessages = "Api Connected";
                 }
@@ -139,8 +141,8 @@ namespace OHDataLogger.Methods
             }
             else
             {
-                if(OpenHABRest.ApiColor != Brushes.Red)
-                { 
+                if (OpenHABRest.ApiColor != Brushes.Red)
+                {
                     OpenHABRest.ApiColor = Brushes.Red;
                     OpenHABRest.ApiMessages = "Api Disconnected";
                 }

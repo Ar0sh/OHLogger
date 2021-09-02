@@ -28,7 +28,7 @@ namespace OHDataLogger.Methods
             {
                 cmd = "CREATE TABLE [dbo].[" + name + "]([" + ColTime + "][datetime2](7) NOT NULL,[" + ColVal + "] [datetime2](7) DEFAULT NULL) ON[PRIMARY]";
             }
-            else if(type.ToLower() == "switch")
+            else if(type.ToLower() == "switch" || type.ToLower() == "contact")
             {
                 cmd = "CREATE TABLE [dbo].[" + name + "]([" + ColTime + "][datetime2](7) NOT NULL,[" + ColVal + "] [nvarchar](6) DEFAULT NULL) ON[PRIMARY]";
             }
@@ -38,7 +38,7 @@ namespace OHDataLogger.Methods
             }
             else
             {
-                cmd = "CREATE TABLE [dbo].[" + name + "]([" + ColTime + "][datetime2](7) NULL,[" + ColVal + "] [nvarchar](50) NULL) ON[PRIMARY]";
+                cmd = "CREATE TABLE [dbo].[" + name + "]([" + ColTime + "][datetime2](7) NULL,[" + ColVal + "] [nvarchar](300) NULL) ON[PRIMARY]";
             }
             try
             {
@@ -109,10 +109,12 @@ namespace OHDataLogger.Methods
                     GetSqlTables();
                 }
                 string value;
+                Items itemsss;
                 Console.WriteLine(OpenHABRest.dtSql.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss.000"));
                 foreach (Items item in ItemsListCopy)
                 {
-                    if (item.type.ToLower() == "switch" || item.type.ToLower() == "color")
+                    itemsss = item;
+                    if (item.type.ToLower() == "switch" || item.type.ToLower() == "color" || item.type.ToLower() == "contact")
                     {
                         value = "'" + item.state.Split(' ')[0] + "'";
                     }
@@ -158,6 +160,10 @@ namespace OHDataLogger.Methods
                     {
                         OpenHABRest.SqlColor = Brushes.Red;
                         OpenHABRest.SqlMessages = "SQL Error";
+                    }
+                    if(sqlEx.Message.Contains("truncated"))
+                    {
+
                     }
                     Logger.LogMessage(sqlEx.Message, ErrorLevel.SQL);
                 }

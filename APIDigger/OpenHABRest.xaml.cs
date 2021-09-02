@@ -191,17 +191,17 @@ namespace OHDataLogger
             }
         }
 
-        void Update()
+        private void Update()
         {
             bool watcher = false;
             Stopwatch stopW = new Stopwatch();
             while (!_apiTokenSource.Token.IsCancellationRequested)
             {
-                if(watcher)
+                if (watcher)
                 {
                     try
                     {
-                        var _apiCancellationTriggered = _apiTokenSource.Token.WaitHandle.WaitOne((Properties.Settings.Default.UpdateInterval * 1000) - (int)stopW.Elapsed.TotalMilliseconds);
+                        bool _apiCancellationTriggered = _apiTokenSource.Token.WaitHandle.WaitOne((Properties.Settings.Default.UpdateInterval * 1000) - (int)stopW.Elapsed.TotalMilliseconds);
                         stopW.Restart();
                         dtApi = DateTime.Now;
                         Items.Clear();
@@ -213,7 +213,7 @@ namespace OHDataLogger
                         }
                         else
                         {
-                            if(AddedSensor.Count != 0)
+                            if (AddedSensor.Count != 0)
                             {
                                 getApiData.UpdateDataTable(AddedSensor);
                                 AddedSensor.Clear();
@@ -223,7 +223,7 @@ namespace OHDataLogger
                         }
                         Dispatcher.Invoke(() =>
                         {
-                            if(AdSens)
+                            if (AdSens)
                             {
                                 dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
                                 AdSens = false;
@@ -231,10 +231,13 @@ namespace OHDataLogger
                             if (dgSensors.IsKeyboardFocusWithin)
                             {
                                 dgSensors.Items.Refresh();
-                                dgSensors.Focus();
+                                _ = dgSensors.Focus();
                             }
                             else
+                            {
                                 dgSensors.Items.Refresh();
+                            }
+
                             UpdateGui(false, true, false);
                         });
                         stopW.Stop();
@@ -244,7 +247,7 @@ namespace OHDataLogger
                         Logger.LogMessage(ex.Message, ErrorLevel.API);
                     }
                 }
-                else if(DateTime.Now.Second % Properties.Settings.Default.UpdateInterval == 0 && !watcher)
+                else if (DateTime.Now.Second % Properties.Settings.Default.UpdateInterval == 0 && !watcher)
                 {
                     watcher = true;
                 }
@@ -254,29 +257,41 @@ namespace OHDataLogger
         private void API_UpdateDict(bool update = false)
         {
             if (!update)
+            {
                 getApiData.PopulateItemsDict();
+            }
             else
+            {
                 getApiData.UpdateItemsDict();
-
+            }
         }
 
-        void StoreSqlCall()
+        private void StoreSqlCall()
         {
+            int min = DateTime.Now.Minute;
+            int hour = DateTime.Now.Hour;
+
             try
-            { 
+            {
                 bool watcher = false;
                 bool firstrun = true;
                 Stopwatch stopW = new Stopwatch();
                 while (!_sqlTokenSource.Token.IsCancellationRequested)
                 {
                     if (watcher)
-                    { 
-                        if(!firstrun)
-                            _sqlTokenSource.Token.WaitHandle.WaitOne(60000 - (int)stopW.Elapsed.TotalMilliseconds);
+                    {
+                        if (!firstrun)
+                        {
+                            _ = _sqlTokenSource.Token.WaitHandle.WaitOne(60000 - (int)stopW.Elapsed.TotalMilliseconds);
+                        }
+
                         stopW.Restart();
                         dtSql = DateTime.Now;
                         if (dtSql.Second % 60 != 0 && !firstrun)
+                        {
                             watcher = false;
+                        }
+
                         firstrun = false;
                         try
                         {
@@ -292,15 +307,18 @@ namespace OHDataLogger
                             {
                                 if (!_apiloggedIn)
                                 {
+                                    SqlMessages = "SQL Connected";
+                                    SqlColor = Brushes.Green;
                                     SqlErrMessage = "No API Data";
                                     SqlErrColor = Brushes.Orange;
                                     _resetSqlInfo = true;
                                 }
                                 else if (_resetSqlInfo)
                                 {
-                                    SqlMessages = "SQL Connected";
+                                    SqlMessages = "SQL Connected and storing";
                                     SqlColor = Brushes.Green;
                                     _resetSqlInfo = false;
+                                    dataSqlClasses.StoreValuesToSql();
                                 }
                                 statSqlCon.Dispatcher.Invoke(() =>
                                 {
@@ -315,23 +333,23 @@ namespace OHDataLogger
                         stopW.Stop();
                     }
                     else if (DateTime.Now.Second % 60 == 0 && !watcher)
-                    { 
+                    {
                         watcher = true;
                         firstrun = true;
                     }
                     else if (DateTime.Now.Second % 60 < 56 && !watcher)
                     {
-                        _sqlTokenSource.Token.WaitHandle.WaitOne(57000 - (DateTime.Now.Second * 1000));
+                        _ = _sqlTokenSource.Token.WaitHandle.WaitOne(57000 - (DateTime.Now.Second * 1000));
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.LogMessage(ex.Message, ErrorLevel.THREAD);
             }
         }
 
-        void LogInThread(string _Ip)
+        private void LogInThread(string _Ip)
         {
             try
             {
@@ -366,54 +384,65 @@ namespace OHDataLogger
                     UpdateSqlUserPass(ex.Message);
                 }
                 else
+                {
                     UpdateSqlUserPass("UserNotAccepted");
+                }
+
                 Logger.LogMessage(ex.Message, ErrorLevel.LOGIN);
         }
             finally
             {
                 if (conn != null)
+                {
                     conn.Close();
+                }
                 Dispatcher.Invoke(() =>
                 {
                     btnSqlLogin.IsEnabled = true;
                     if (btnSqlLogin.Content.ToString() == "Connecting...")
+                    {
                         btnSqlLogin.Content = "Connect";
+                    }
                 });
             }
         }
 
         private void ConnectApi(bool LogIn = true)
         {
-            if(LogIn && Functions.CheckValidIp(tbApiIp.Text, true))
+            if (LogIn && Functions.CheckValidIp(tbApiIp.Text, true))
             {
                 _apiTokenSource = new CancellationTokenSource();
                 Functions.SaveApiDetails(tbApiIp.Text, ChkRememberApi.IsChecked);
                 getApiData.RestConn(true);
-                if(_CheckApiCon)
-                { 
+                if (_CheckApiCon)
+                {
                     RunApi();
-                    if(getApiData.ItemsDict.Count > 0)
-                    { 
+                    if (getApiData.ItemsDict.Count > 0)
+                    {
                         btnConnectApi.Content = "Disconnect";
                         tbApiIp.IsEnabled = false;
                         SqlErrMessage = "Waiting for API data";
                         SqlErrColor = Brushes.LightGreen;
-                        if(tbApiIp.Background == Brushes.White || tbApiIp.Background == Brushes.Red)
+                        if (tbApiIp.Background == Brushes.White || tbApiIp.Background == Brushes.Red)
+                        {
                             tbApiIp.Background = Brushes.Green;
-                        UpdateGui(false, false, true);
+                        }
+                        UpdateGui(false, true, true);
                         _apiloggedIn = true;
                     }
                 }
                 else
                 {
                     if (tbApiIp.Background == Brushes.Green || tbApiIp.Background == Brushes.White)
+                    {
                         tbApiIp.Background = Brushes.Red;
+                    }
                     tbApiIp.IsEnabled = true;
                 }
             }
             else
             {
-                if(_apiloggedIn)
+                if (_apiloggedIn)
                 {
                     _apiTokenSource.Cancel();
                     TableRefresh.Interrupt();
@@ -429,7 +458,9 @@ namespace OHDataLogger
                     SqlErrColor = Brushes.PaleVioletRed;
                     ApiColor = Brushes.Red;
                     if (tbApiIp.Background == Brushes.Red || tbApiIp.Background == Brushes.Green)
+                    {
                         tbApiIp.Background = Brushes.White;
+                    }
                     UpdateGui(false, true, true);
                     _apiloggedIn = false;
                 }
@@ -442,9 +473,9 @@ namespace OHDataLogger
 
         private async Task LogInOutSql(bool LogIn = true) //async void LogInOutSql(bool LogIn = true)
         {
-            if(LogIn)
+            if (LogIn)
             {
-                if(Functions.CheckValidIp(tbSqlIp.Text) && tbDatabaseName.Text != "" && userSql.Text != "" && passSql.Password != "")
+                if (Functions.CheckValidIp(tbSqlIp.Text) && tbDatabaseName.Text != "" && userSql.Text != "" && passSql.Password != "")
                 {
                     _sqlTokenSource = new CancellationTokenSource();
                     _loginTokenSource = new CancellationTokenSource();
@@ -537,7 +568,7 @@ namespace OHDataLogger
 
         private void PassSql_KeyDown(object sender, KeyEventArgs e)
         {
-            if(e.Key == Key.Enter || e.Key == Key.Return)
+            if (e.Key == Key.Enter || e.Key == Key.Return)
             {
                 btnSqlLogin.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
             }
@@ -546,23 +577,31 @@ namespace OHDataLogger
         private async void BtnLogInSql_Click(object sender, RoutedEventArgs e)
         {
             if (btnSqlLogin.Content.ToString() == "Connect")
+            {
                 await LogInOutSql();
+            }
             else
+            {
                 await LogInOutSql(false);
+            }
         }
 
         private void BtnConnectApi_Click(object sender, RoutedEventArgs e)
         {
             if (btnConnectApi.Content.ToString() == "Connect")
+            {
                 ConnectApi();
+            }
             else
+            {
                 ConnectApi(false);
+            }
         }
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
             TextBlock content = (TextBlock)dgSensors.SelectedCells[0].Column.GetCellContent(dgSensors.SelectedCells[0].Item);
-            Process.Start("http://192.168.1.161:8082/rest/items/" + content.Text);
+            _ = Process.Start("http://192.168.1.161:8082/rest/items/" + content.Text);
         }
 
         private void ChkRememberSql_Checked(object sender, RoutedEventArgs e)
@@ -578,8 +617,6 @@ namespace OHDataLogger
             Properties.Settings.Default.Save();
         }
 
-        
-
         private void TbSqlIp_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !Functions.IsTextAllowed(e.Text, @"[^0-9:.]");
@@ -590,7 +627,7 @@ namespace OHDataLogger
 
         public int NumValue
         {
-            get { return _numValue; }
+            get => _numValue;
             set
             {
                 _numValue = value;
@@ -601,14 +638,18 @@ namespace OHDataLogger
 
         private void CmdUp_Click(object sender, RoutedEventArgs e)
         {
-            if(NumValue < 10)
+            if (NumValue < 10)
+            {
                 NumValue++;
+            }
         }
 
         private void CmdDown_Click(object sender, RoutedEventArgs e)
         {
-            if(NumValue > 1)
+            if (NumValue > 1)
+            {
                 NumValue--;
+            }
         }
 
         private void TbUpdateSpeed_TextChanged(object sender, TextChangedEventArgs e)
@@ -619,7 +660,7 @@ namespace OHDataLogger
             }
 
             if (!int.TryParse(tbUpdateSpeed.Text, out _numValue))
-            { 
+            {
                 tbUpdateSpeed.Text = _numValue.ToString(); 
             }
         }
