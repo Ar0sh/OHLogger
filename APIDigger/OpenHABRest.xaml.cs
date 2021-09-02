@@ -58,6 +58,10 @@ namespace OHDataLogger
         public OpenHABRest()
         {
             InitializeComponent();
+            if (!Directory.Exists(Directory.GetCurrentDirectory() + "/LogFile"))
+            {
+                Directory.CreateDirectory(Directory.GetCurrentDirectory() + "/LogFile");
+            }
             if (!File.Exists(Directory.GetCurrentDirectory() + "/LogFile/LogFile.txt"))
                 File.Create(Directory.GetCurrentDirectory() + "/LogFile/LogFile.txt");
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
