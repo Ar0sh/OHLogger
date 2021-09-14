@@ -3,6 +3,7 @@ using OHDataLogger.Methods;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
@@ -55,10 +56,10 @@ namespace OHDataLogger
         public static bool _CheckApiCon;
         public static List<Items> AddedSensor = new List<Items>();
         public bool AdSens = false;
-
-        System.Timers.Timer sqlTimer;
-        System.Timers.Timer apiTimer = new System.Timers.Timer();
-
+        private readonly int sqlTimeInterval = 60;
+        private System.Timers.Timer sqlTimer;
+        private System.Timers.Timer apiTimer;
+        private Secure_It secureIt = new Secure_It();
 
         public OpenHABRest()
         {
@@ -76,37 +77,37 @@ namespace OHDataLogger
             {
                 tbApiIp.Text = Properties.Settings.Default.ApiAddr;
                 ChkRememberApi.IsChecked = true;
-                //if (Properties.Settings.Default.AutoLogon == true)
                 BtnConnectApi_Click(null, null);
             }
             if (Properties.Settings.Default.RememberSqlLogin)
             {
-                userSql.Text = Properties.Settings.Default.UserSql;
-                passSql.Password = Properties.Settings.Default.PassSql;
+                userSql.Text = secureIt.DecryptString(Properties.Settings.Default.UserSql);
+                passSql.Password = secureIt.DecryptString(Properties.Settings.Default.PassSql);
                 tbSqlIp.Text = Properties.Settings.Default.SqlIpAddr;
                 if (Properties.Settings.Default.SqlPort != "")
+                {
                     tbSqlIp.Text += ":" + Properties.Settings.Default.SqlPort;
+                }
                 tbDatabaseName.Text = Properties.Settings.Default.SqlDbName;
                 ChkRememberSql.IsChecked = true;
-                //if(Properties.Settings.Default.AutoLogon == true) 
                 BtnLogInSql_Click(null, null);
             }
         }
 
         void UpdateGui(bool _Sql, bool _Api = false, bool _Err = false)
         {
-            if(_Sql)
-            { 
+            if (_Sql)
+            {
                 statSqlCon.Text = SqlMessages;
                 statSqlConItem.Background = SqlColor;
             }
             if (_Api)
-            { 
+            {
                 statApiCon.Text = ApiMessages;
                 statApiConItem.Background = ApiColor;
             }
             if (_Err)
-            { 
+            {
                 statSqlErr.Text = SqlErrMessage;
                 statSqlErrItem.Background = SqlErrColor;
             }
@@ -155,10 +156,12 @@ namespace OHDataLogger
                     tbSqlIp.Background = Brushes.White;
                     tbDatabaseName.Background = Brushes.White;
                     break;
+                default:
+                    break;
             }
         }
 
-        void RunSql()
+        private void RunSql()
         {
             foreach (Items item in ItemsList)
             {
@@ -179,7 +182,7 @@ namespace OHDataLogger
             SqlStoreTask.Start();
         }
 
-        void RunApi()
+        private void RunApi()
         {
             Functions.SaveApiDetails(tbApiIp.Text, ChkRememberSql.IsChecked);
             getApiData.RestConn(); 
@@ -188,7 +191,7 @@ namespace OHDataLogger
             API_UpdateDict();
             getApiData.PopulateDataTable();
             dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
-            TableRefresh = new Thread(Update);
+            TableRefresh = new Thread(ApiUpdate);
             TableRefresh.Start();
             if (SqlStoreTask == null && btnSqlLogin.Content.ToString() != "Connect")
             {
@@ -200,17 +203,15 @@ namespace OHDataLogger
             }
         }
 
-        private void Update()
+        private void ApiUpdate()
         {
             bool watcher = false;
-            //Stopwatch stopW = new Stopwatch(); 
             apiTimer = new System.Timers.Timer
             {
                 Interval = Properties.Settings.Default.UpdateInterval * 1000
             };
             try
             {
-
                 while (!watcher)
                 {
                     if (DateTime.Now.Second % Properties.Settings.Default.UpdateInterval == 0 && !watcher)
@@ -264,69 +265,11 @@ namespace OHDataLogger
                         watcher = true;
                     }
                 }
-                //apiTimer.Stop();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Logger.LogMessage(ex.Message, ErrorLevel.API);
+                Logger.LogMessage(ex.Message, ErrorLevel.API_THREAD);
             }
-            //while (!_apiTokenSource.Token.IsCancellationRequested)
-            //{
-            //    if (watcher)
-            //    {
-                    //try
-                    //{
-                    //    bool _apiCancellationTriggered = _apiTokenSource.Token.WaitHandle.WaitOne((Properties.Settings.Default.UpdateInterval * 1000) - (int)stopW.Elapsed.TotalMilliseconds);
-                    //    stopW.Restart();
-                    //    dtApi = DateTime.Now;
-                    //    Items.Clear();
-                    //    if (getApiData.ItemsDict.Count == 0)
-                    //    {
-                    //        API_UpdateDict();
-                    //        getApiData.PopulateDataTable();
-                    //        dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
-                    //    }
-                    //    else
-                    //    {
-                    //        if (AddedSensor.Count != 0)
-                    //        {
-                    //            getApiData.UpdateDataTable(AddedSensor);
-                    //            AddedSensor.Clear();
-                    //            AdSens = true;
-                    //        }
-                    //        API_UpdateDict(true);
-                    //    }
-                    //    Dispatcher.Invoke(() =>
-                    //    {
-                    //        if (AdSens)
-                    //        {
-                    //            dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
-                    //            AdSens = false;
-                    //        }
-                    //        if (dgSensors.IsKeyboardFocusWithin)
-                    //        {
-                    //            dgSensors.Items.Refresh();
-                    //            _ = dgSensors.Focus();
-                    //        }
-                    //        else
-                    //        {
-                    //            dgSensors.Items.Refresh();
-                    //        }
-
-                    //        UpdateGui(false, true, false);
-                    //    });
-                    //    stopW.Stop();
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    Logger.LogMessage(ex.Message, ErrorLevel.API);
-                    //}
-            //    }
-            //    else if (DateTime.Now.Second % Properties.Settings.Default.UpdateInterval == 0 && !watcher)
-            //    {
-            //        watcher = true;
-            //    }
-            //}
         }
 
         private void TimedApiCall(object sender, ElapsedEventArgs e)
@@ -373,8 +316,9 @@ namespace OHDataLogger
             }
             catch (Exception ex)
             {
-                Logger.LogMessage(ex.Message, ErrorLevel.API);
+                Logger.LogMessage(ex.Message, ErrorLevel.API_TIMER);
             }
+            apiTimer.Interval = (Properties.Settings.Default.UpdateInterval - (DateTime.Now.TimeOfDay.TotalSeconds % Properties.Settings.Default.UpdateInterval)) * 1000;
         }
 
         private void API_UpdateDict(bool update = false)
@@ -395,51 +339,44 @@ namespace OHDataLogger
             int hour = DateTime.Now.Hour;
             sqlTimer = new System.Timers.Timer
             {
-                Interval = 60000
+                Interval = sqlTimeInterval * 1000
             };
             try
             {
                 bool watcher = false;
-
-                while(!watcher)
+                while (!watcher)
                 {
-                    if (DateTime.Now.Second % 60 == 0 && !watcher)
+                    if (DateTime.Now.Second % sqlTimeInterval == 0 && !watcher)
                     {
                         sqlTimer.Elapsed += new ElapsedEventHandler(TimedSqlCall);
                         sqlTimer.Start();
                         dtSql = DateTime.Now;
                         try
                         {
-                            if (ItemsListTemp.Count > 0 && !_resetSqlInfo)
+                            if (!_apiloggedIn)
                             {
-                                dataSqlClasses.StoreValuesToSql();
+                                SqlMessages = "SQL Connected";
+                                SqlColor = Brushes.Green;
+                                SqlErrMessage = "No API Data";
+                                SqlErrColor = Brushes.Orange;
+                                _resetSqlInfo = true;
+                            }
+                            else if (_resetSqlInfo)
+                            {
+                                SqlMessages = "SQL Connected and storing";
+                                SqlColor = Brushes.Green;
+                                _resetSqlInfo = false;
+                                dataSqlClasses.StoreValuesToSql(); 
                                 statSqlCon.Dispatcher.Invoke(() =>
                                 {
                                     UpdateGui(true, false, true);
+                                    statSqlLastStore.Text = dtSql.ToString();
                                 });
                             }
-                            else
+                            statSqlCon.Dispatcher.Invoke(() =>
                             {
-                                if (!_apiloggedIn)
-                                {
-                                    SqlMessages = "SQL Connected";
-                                    SqlColor = Brushes.Green;
-                                    SqlErrMessage = "No API Data";
-                                    SqlErrColor = Brushes.Orange;
-                                    _resetSqlInfo = true;
-                                }
-                                else if (_resetSqlInfo)
-                                {
-                                    SqlMessages = "SQL Connected and storing";
-                                    SqlColor = Brushes.Green;
-                                    _resetSqlInfo = false;
-                                    dataSqlClasses.StoreValuesToSql();
-                                }
-                                statSqlCon.Dispatcher.Invoke(() =>
-                                {
-                                    UpdateGui(true, false, true);
-                                });
-                            }
+                                UpdateGui(true, false, true);
+                            });
                         }
                         catch (Exception ex)
                         {
@@ -447,85 +384,16 @@ namespace OHDataLogger
                         }
                         watcher = true;
                     }
-                    else if (DateTime.Now.Second % 60 < 59 && !watcher)
+                    else if (DateTime.Now.Second % sqlTimeInterval < (sqlTimeInterval - 1) && !watcher)
                     {
-                        _ = _sqlTokenSource.Token.WaitHandle.WaitOne(60000 - (DateTime.Now.Second * 1000));
+                        
+                        _ = _sqlTokenSource.Token.WaitHandle.WaitOne((sqlTimeInterval * 1000) - (DateTime.Now.Second % sqlTimeInterval * 1000));
                     }
                 }
-                //sqlTimer.Stop();
-
-                //while (!_sqlTokenSource.Token.IsCancellationRequested)
-                //{
-                //    if (watcher)
-                //    {
-                //if (!firstrun)
-                //{
-                //    _ = _sqlTokenSource.Token.WaitHandle.WaitOne(60000 - (int)stopW.Elapsed.TotalMilliseconds);
-                //}
-
-                //stopW.Restart();
-                //if (dtSql.Second % 60 != 0 && !firstrun)
-                //{
-                //    watcher = false;
-                //}
-
-                //firstrun = false;
-
-                //try
-                //{
-                //    if (ItemsList.Count > 0 && !_resetSqlInfo)
-                //    {
-                //        dataSqlClasses.StoreValuesToSql();
-                //        statSqlCon.Dispatcher.Invoke(() =>
-                //        {
-                //            UpdateGui(true, false, true);
-                //        });
-                //    }
-                //    else
-                //    {
-                //        if (!_apiloggedIn)
-                //        {
-                //            SqlMessages = "SQL Connected";
-                //            SqlColor = Brushes.Green;
-                //            SqlErrMessage = "No API Data";
-                //            SqlErrColor = Brushes.Orange;
-                //            _resetSqlInfo = true;
-                //        }
-                //        else if (_resetSqlInfo)
-                //        {
-                //            SqlMessages = "SQL Connected and storing";
-                //            SqlColor = Brushes.Green;
-                //            _resetSqlInfo = false;
-                //            dataSqlClasses.StoreValuesToSql();
-                //        }
-                //        statSqlCon.Dispatcher.Invoke(() =>
-                //        {
-                //            UpdateGui(true, false, true);
-                //        });
-                //    }
-                //}
-                //catch (Exception ex)
-                //{
-                //    Logger.LogMessage(ex.Message, ErrorLevel.SQL);
-                //}
-                //stopW.Stop();
-                //}
-                //else if (DateTime.Now.Second % 9 == 0 && !watcher)
-                //{
-                //    watcher = true;
-                //    firstrun = true; 
-                //    timer.Elapsed += new ElapsedEventHandler(TimedSqlCall);
-                //    timer.Start();
-                //}
-                //else if (DateTime.Now.Second % 60 < 56 && !watcher)
-                //{
-                //    _ = _sqlTokenSource.Token.WaitHandle.WaitOne(57000 - (DateTime.Now.Second * 1000));
-                //}
-                //}
             }
             catch (Exception ex)
             {
-                Logger.LogMessage(ex.Message, ErrorLevel.THREAD);
+                Logger.LogMessage(ex.Message, ErrorLevel.SQL_THREAD);
             }
         }
 
@@ -540,6 +408,7 @@ namespace OHDataLogger
                     statSqlCon.Dispatcher.Invoke(() =>
                     {
                         UpdateGui(true, false, true);
+                        statSqlLastStore.Text = dtSql.ToString();
                     });
                 }
                 else
@@ -557,7 +426,11 @@ namespace OHDataLogger
                         SqlMessages = "SQL Connected and storing";
                         SqlColor = Brushes.Green;
                         _resetSqlInfo = false;
-                        dataSqlClasses.StoreValuesToSql();
+                        dataSqlClasses.StoreValuesToSql(); 
+                        statSqlCon.Dispatcher.Invoke(() =>
+                        {
+                            statSqlLastStore.Text = dtSql.ToString();
+                        });
                     }
                     statSqlCon.Dispatcher.Invoke(() =>
                     {
@@ -567,8 +440,9 @@ namespace OHDataLogger
             }
             catch (Exception ex)
             {
-                Logger.LogMessage(ex.Message, ErrorLevel.SQL);
+                Logger.LogMessage(ex.Message, ErrorLevel.SQL_TIMER);
             }
+            sqlTimer.Interval = (sqlTimeInterval - (DateTime.Now.TimeOfDay.TotalSeconds % sqlTimeInterval)) * 1000;
         }
 
         private void LogInThread(string _Ip)
@@ -597,7 +471,6 @@ namespace OHDataLogger
                 {
                     RunSql();
                 });
-                //Task.Run(RunSql);
             }
             catch (Exception ex)
             {
@@ -669,8 +542,6 @@ namespace OHDataLogger
                     apiTimer.Stop();
                     _apiTokenSource.Cancel();
                     TableRefresh.Interrupt();
-                    //if (TableRefresh != null)
-                    //    TableRefresh.Abort();
                     getApiData.ItemsTable.Clear();
                     ItemsList.Clear();
                     ItemsListTemp.Clear();
@@ -695,7 +566,7 @@ namespace OHDataLogger
             }
         }
 
-        private async Task LogInOutSql(bool LogIn = true) //async void LogInOutSql(bool LogIn = true)
+        private async Task LogInOutSql(bool LogIn = true)
         {
             if (LogIn)
             {
@@ -706,9 +577,7 @@ namespace OHDataLogger
                     btnSqlLogin.IsEnabled = false;
                     btnSqlLogin.Content = "Connecting...";
                     string _Ip = tbSqlIp.Text;
-                    Functions.SaveSqlUser(_Ip, tbDatabaseName.Text, userSql.Text, passSql.Password, ChkRememberSql.IsChecked);
-                    //LogInSql = new Thread(() => LogInThread(_Ip));
-                    //LogInSql.Start();
+                    Functions.SaveSqlUser(_Ip, tbDatabaseName.Text, secureIt.EncryptString(userSql.Text), secureIt.EncryptString(passSql.Password), ChkRememberSql.IsChecked);
                     await Task.Run(() => LogInThread(_Ip), _loginTokenSource.Token);
                 }
                 else
@@ -724,14 +593,8 @@ namespace OHDataLogger
                     {
                         _sqlTokenSource.Cancel();
                         sqlTimer.Stop();
-                        //SqlStoreTask.Interrupt();
-                        //SqlStoreTask.Abort();
                     }
                     _loginTokenSource.Cancel();
-                    //if (SqlStoreTask != null)
-                    //    SqlStoreTask.Abort();
-                    //if (LogInSql != null)
-                    //    LogInSql.Abort();
                     UpdateSqlUserPass("LogOut");
                     SqlMessages = "SQL Disconnected";
                     SqlColor = Brushes.Red;
@@ -744,28 +607,21 @@ namespace OHDataLogger
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            //_apiTokenSource.Cancel();
-            //_sqlTokenSource.Cancel();
-            //_loginTokenSource.Cancel();
-
             if (TableRefresh != null)
             {
                 apiTimer.Stop();
                 _apiTokenSource.Cancel();
                 TableRefresh.Interrupt();
-                //TableRefresh.Abort();
             }
             if (SqlStoreTask != null)
             {
                 sqlTimer.Stop();
                 _sqlTokenSource.Cancel();
                 SqlStoreTask.Interrupt();
-                //SqlStoreTask.Abort();
             }
             if (LogInSql != null)
             {
                 _loginTokenSource.Cancel();
-                //LogInSql.Abort();
             }
             if (_sqlloggedIn)
             {
@@ -828,7 +684,7 @@ namespace OHDataLogger
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
             TextBlock content = (TextBlock)dgSensors.SelectedCells[0].Column.GetCellContent(dgSensors.SelectedCells[0].Item);
-            _ = Process.Start("http://192.168.1.161:8082/rest/items/" + content.Text);
+            _ = Process.Start("http://" + tbApiIp.Text + "/rest/items/" + content.Text);
         }
 
         private void ChkRememberSql_Checked(object sender, RoutedEventArgs e)

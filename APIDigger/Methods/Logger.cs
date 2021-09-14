@@ -63,6 +63,6 @@ namespace OHDataLogger.Methods
     }
     public enum ErrorLevel
     {
-        WARNING, SQL, API, OTHER, SQLTABLE, LOGIN, THREAD
+        WARNING, SQL, API, OTHER, SQLTABLE, LOGIN, THREAD, SQL_TIMER, API_TIMER, SQL_THREAD, API_THREAD
     }
 }
