@@ -108,5 +108,6 @@
         </GroupBox>
         <Label x:Name="StatusText" Content="" HorizontalAlignment="Left" Margin="665,58,0,0" VerticalAlignment="Top"/>
         <Label x:Name="StatusText2" Content="" HorizontalAlignment="Left" Margin="665,89,0,0" VerticalAlignment="Top" Height="35"/>
+        <Label x:Name="testlabel" HorizontalAlignment="Left" Margin="675,34,0,0" VerticalAlignment="Top"/>
     </Grid>
 </Window>

@@ -13,6 +13,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -40,6 +41,7 @@ namespace OHDataLogger
         public static DateTime dtSql = new DateTime();
         public static DateTime dtApi = new DateTime();
         public static List<Items> ItemsList = new List<Items>();
+        public static List<Items> ItemsListTemp = new List<Items>();
         public static string conStr;
         public static SqlConnection conn;
         public static string ApiMessages = "API Disconnected";
@@ -53,6 +55,9 @@ namespace OHDataLogger
         public static bool _CheckApiCon;
         public static List<Items> AddedSensor = new List<Items>();
         public bool AdSens = false;
+
+        System.Timers.Timer sqlTimer;
+        System.Timers.Timer apiTimer = new System.Timers.Timer();
 
 
         public OpenHABRest()
@@ -198,63 +203,177 @@ namespace OHDataLogger
         private void Update()
         {
             bool watcher = false;
-            Stopwatch stopW = new Stopwatch();
-            while (!_apiTokenSource.Token.IsCancellationRequested)
+            //Stopwatch stopW = new Stopwatch(); 
+            apiTimer = new System.Timers.Timer
             {
-                if (watcher)
+                Interval = Properties.Settings.Default.UpdateInterval * 1000
+            };
+            try
+            {
+
+                while (!watcher)
                 {
-                    try
+                    if (DateTime.Now.Second % Properties.Settings.Default.UpdateInterval == 0 && !watcher)
                     {
-                        bool _apiCancellationTriggered = _apiTokenSource.Token.WaitHandle.WaitOne((Properties.Settings.Default.UpdateInterval * 1000) - (int)stopW.Elapsed.TotalMilliseconds);
-                        stopW.Restart();
+                        apiTimer.Elapsed += new ElapsedEventHandler(TimedApiCall);
+                        apiTimer.Start();
                         dtApi = DateTime.Now;
-                        Items.Clear();
-                        if (getApiData.ItemsDict.Count == 0)
+                        try
                         {
-                            API_UpdateDict();
-                            getApiData.PopulateDataTable();
-                            dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
-                        }
-                        else
-                        {
-                            if (AddedSensor.Count != 0)
+                            Items.Clear();
+                            if (getApiData.ItemsDict.Count == 0)
                             {
-                                getApiData.UpdateDataTable(AddedSensor);
-                                AddedSensor.Clear();
-                                AdSens = true;
-                            }
-                            API_UpdateDict(true);
-                        }
-                        Dispatcher.Invoke(() =>
-                        {
-                            if (AdSens)
-                            {
+                                API_UpdateDict();
+                                getApiData.PopulateDataTable();
                                 dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
-                                AdSens = false;
-                            }
-                            if (dgSensors.IsKeyboardFocusWithin)
-                            {
-                                dgSensors.Items.Refresh();
-                                _ = dgSensors.Focus();
                             }
                             else
                             {
-                                dgSensors.Items.Refresh();
+                                if (AddedSensor.Count != 0)
+                                {
+                                    getApiData.UpdateDataTable(AddedSensor);
+                                    AddedSensor.Clear();
+                                    AdSens = true;
+                                }
+                                API_UpdateDict(true);
                             }
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (AdSens)
+                                {
+                                    dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
+                                    AdSens = false;
+                                }
+                                if (dgSensors.IsKeyboardFocusWithin)
+                                {
+                                    dgSensors.Items.Refresh();
+                                    _ = dgSensors.Focus();
+                                }
+                                else
+                                {
+                                    dgSensors.Items.Refresh();
+                                }
 
-                            UpdateGui(false, true, false);
-                        });
-                        stopW.Stop();
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogMessage(ex.Message, ErrorLevel.API);
+                                UpdateGui(false, true, false);
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogMessage(ex.Message, ErrorLevel.API);
+                        }
+                        watcher = true;
                     }
                 }
-                else if (DateTime.Now.Second % Properties.Settings.Default.UpdateInterval == 0 && !watcher)
+                //apiTimer.Stop();
+            }
+            catch(Exception ex)
+            {
+                Logger.LogMessage(ex.Message, ErrorLevel.API);
+            }
+            //while (!_apiTokenSource.Token.IsCancellationRequested)
+            //{
+            //    if (watcher)
+            //    {
+                    //try
+                    //{
+                    //    bool _apiCancellationTriggered = _apiTokenSource.Token.WaitHandle.WaitOne((Properties.Settings.Default.UpdateInterval * 1000) - (int)stopW.Elapsed.TotalMilliseconds);
+                    //    stopW.Restart();
+                    //    dtApi = DateTime.Now;
+                    //    Items.Clear();
+                    //    if (getApiData.ItemsDict.Count == 0)
+                    //    {
+                    //        API_UpdateDict();
+                    //        getApiData.PopulateDataTable();
+                    //        dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
+                    //    }
+                    //    else
+                    //    {
+                    //        if (AddedSensor.Count != 0)
+                    //        {
+                    //            getApiData.UpdateDataTable(AddedSensor);
+                    //            AddedSensor.Clear();
+                    //            AdSens = true;
+                    //        }
+                    //        API_UpdateDict(true);
+                    //    }
+                    //    Dispatcher.Invoke(() =>
+                    //    {
+                    //        if (AdSens)
+                    //        {
+                    //            dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
+                    //            AdSens = false;
+                    //        }
+                    //        if (dgSensors.IsKeyboardFocusWithin)
+                    //        {
+                    //            dgSensors.Items.Refresh();
+                    //            _ = dgSensors.Focus();
+                    //        }
+                    //        else
+                    //        {
+                    //            dgSensors.Items.Refresh();
+                    //        }
+
+                    //        UpdateGui(false, true, false);
+                    //    });
+                    //    stopW.Stop();
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    Logger.LogMessage(ex.Message, ErrorLevel.API);
+                    //}
+            //    }
+            //    else if (DateTime.Now.Second % Properties.Settings.Default.UpdateInterval == 0 && !watcher)
+            //    {
+            //        watcher = true;
+            //    }
+            //}
+        }
+
+        private void TimedApiCall(object sender, ElapsedEventArgs e)
+        {
+            dtApi = DateTime.Now;
+            try
+            {
+                Items.Clear();
+                if (getApiData.ItemsDict.Count == 0)
                 {
-                    watcher = true;
+                    API_UpdateDict();
+                    getApiData.PopulateDataTable();
+                    dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
                 }
+                else
+                {
+                    if (AddedSensor.Count != 0)
+                    {
+                        getApiData.UpdateDataTable(AddedSensor);
+                        AddedSensor.Clear();
+                        AdSens = true;
+                    }
+                    API_UpdateDict(true);
+                }
+                Dispatcher.Invoke(() =>
+                {
+                    if (AdSens)
+                    {
+                        dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
+                        AdSens = false;
+                    }
+                    if (dgSensors.IsKeyboardFocusWithin)
+                    {
+                        dgSensors.Items.Refresh();
+                        _ = dgSensors.Focus();
+                    }
+                    else
+                    {
+                        dgSensors.Items.Refresh();
+                    }
+
+                    UpdateGui(false, true, false);
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.LogMessage(ex.Message, ErrorLevel.API);
             }
         }
 
@@ -274,32 +393,24 @@ namespace OHDataLogger
         {
             int min = DateTime.Now.Minute;
             int hour = DateTime.Now.Hour;
-
+            sqlTimer = new System.Timers.Timer
+            {
+                Interval = 60000
+            };
             try
             {
                 bool watcher = false;
-                bool firstrun = true;
-                Stopwatch stopW = new Stopwatch();
-                while (!_sqlTokenSource.Token.IsCancellationRequested)
+
+                while(!watcher)
                 {
-                    if (watcher)
+                    if (DateTime.Now.Second % 60 == 0 && !watcher)
                     {
-                        if (!firstrun)
-                        {
-                            _ = _sqlTokenSource.Token.WaitHandle.WaitOne(60000 - (int)stopW.Elapsed.TotalMilliseconds);
-                        }
-
-                        stopW.Restart();
+                        sqlTimer.Elapsed += new ElapsedEventHandler(TimedSqlCall);
+                        sqlTimer.Start();
                         dtSql = DateTime.Now;
-                        if (dtSql.Second % 60 != 0 && !firstrun)
-                        {
-                            watcher = false;
-                        }
-
-                        firstrun = false;
                         try
                         {
-                            if (ItemsList.Count > 0 && !_resetSqlInfo)
+                            if (ItemsListTemp.Count > 0 && !_resetSqlInfo)
                             {
                                 dataSqlClasses.StoreValuesToSql();
                                 statSqlCon.Dispatcher.Invoke(() =>
@@ -334,22 +445,129 @@ namespace OHDataLogger
                         {
                             Logger.LogMessage(ex.Message, ErrorLevel.SQL);
                         }
-                        stopW.Stop();
-                    }
-                    else if (DateTime.Now.Second % 60 == 0 && !watcher)
-                    {
                         watcher = true;
-                        firstrun = true;
                     }
-                    else if (DateTime.Now.Second % 60 < 56 && !watcher)
+                    else if (DateTime.Now.Second % 60 < 59 && !watcher)
                     {
-                        _ = _sqlTokenSource.Token.WaitHandle.WaitOne(57000 - (DateTime.Now.Second * 1000));
+                        _ = _sqlTokenSource.Token.WaitHandle.WaitOne(60000 - (DateTime.Now.Second * 1000));
                     }
                 }
+                //sqlTimer.Stop();
+
+                //while (!_sqlTokenSource.Token.IsCancellationRequested)
+                //{
+                //    if (watcher)
+                //    {
+                //if (!firstrun)
+                //{
+                //    _ = _sqlTokenSource.Token.WaitHandle.WaitOne(60000 - (int)stopW.Elapsed.TotalMilliseconds);
+                //}
+
+                //stopW.Restart();
+                //if (dtSql.Second % 60 != 0 && !firstrun)
+                //{
+                //    watcher = false;
+                //}
+
+                //firstrun = false;
+
+                //try
+                //{
+                //    if (ItemsList.Count > 0 && !_resetSqlInfo)
+                //    {
+                //        dataSqlClasses.StoreValuesToSql();
+                //        statSqlCon.Dispatcher.Invoke(() =>
+                //        {
+                //            UpdateGui(true, false, true);
+                //        });
+                //    }
+                //    else
+                //    {
+                //        if (!_apiloggedIn)
+                //        {
+                //            SqlMessages = "SQL Connected";
+                //            SqlColor = Brushes.Green;
+                //            SqlErrMessage = "No API Data";
+                //            SqlErrColor = Brushes.Orange;
+                //            _resetSqlInfo = true;
+                //        }
+                //        else if (_resetSqlInfo)
+                //        {
+                //            SqlMessages = "SQL Connected and storing";
+                //            SqlColor = Brushes.Green;
+                //            _resetSqlInfo = false;
+                //            dataSqlClasses.StoreValuesToSql();
+                //        }
+                //        statSqlCon.Dispatcher.Invoke(() =>
+                //        {
+                //            UpdateGui(true, false, true);
+                //        });
+                //    }
+                //}
+                //catch (Exception ex)
+                //{
+                //    Logger.LogMessage(ex.Message, ErrorLevel.SQL);
+                //}
+                //stopW.Stop();
+                //}
+                //else if (DateTime.Now.Second % 9 == 0 && !watcher)
+                //{
+                //    watcher = true;
+                //    firstrun = true; 
+                //    timer.Elapsed += new ElapsedEventHandler(TimedSqlCall);
+                //    timer.Start();
+                //}
+                //else if (DateTime.Now.Second % 60 < 56 && !watcher)
+                //{
+                //    _ = _sqlTokenSource.Token.WaitHandle.WaitOne(57000 - (DateTime.Now.Second * 1000));
+                //}
+                //}
             }
             catch (Exception ex)
             {
                 Logger.LogMessage(ex.Message, ErrorLevel.THREAD);
+            }
+        }
+
+        private void TimedSqlCall(object sender, ElapsedEventArgs args)
+        {
+            dtSql = DateTime.Now;
+            try
+            {
+                if (ItemsListTemp.Count > 0 && !_resetSqlInfo)
+                {
+                    dataSqlClasses.StoreValuesToSql();
+                    statSqlCon.Dispatcher.Invoke(() =>
+                    {
+                        UpdateGui(true, false, true);
+                    });
+                }
+                else
+                {
+                    if (!_apiloggedIn)
+                    {
+                        SqlMessages = "SQL Connected";
+                        SqlColor = Brushes.Green;
+                        SqlErrMessage = "No API Data";
+                        SqlErrColor = Brushes.Orange;
+                        _resetSqlInfo = true;
+                    }
+                    else if (_resetSqlInfo)
+                    {
+                        SqlMessages = "SQL Connected and storing";
+                        SqlColor = Brushes.Green;
+                        _resetSqlInfo = false;
+                        dataSqlClasses.StoreValuesToSql();
+                    }
+                    statSqlCon.Dispatcher.Invoke(() =>
+                    {
+                        UpdateGui(true, false, true);
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogMessage(ex.Message, ErrorLevel.SQL);
             }
         }
 
@@ -448,12 +666,14 @@ namespace OHDataLogger
             {
                 if (_apiloggedIn)
                 {
+                    apiTimer.Stop();
                     _apiTokenSource.Cancel();
                     TableRefresh.Interrupt();
                     //if (TableRefresh != null)
                     //    TableRefresh.Abort();
                     getApiData.ItemsTable.Clear();
                     ItemsList.Clear();
+                    ItemsListTemp.Clear();
                     btnConnectApi.IsEnabled = true;
                     tbApiIp.IsEnabled = true;
                     btnConnectApi.Content = "Connect";
@@ -503,6 +723,7 @@ namespace OHDataLogger
                     if (SqlStoreTask != null)
                     {
                         _sqlTokenSource.Cancel();
+                        sqlTimer.Stop();
                         //SqlStoreTask.Interrupt();
                         //SqlStoreTask.Abort();
                     }
@@ -529,12 +750,14 @@ namespace OHDataLogger
 
             if (TableRefresh != null)
             {
+                apiTimer.Stop();
                 _apiTokenSource.Cancel();
                 TableRefresh.Interrupt();
                 //TableRefresh.Abort();
             }
             if (SqlStoreTask != null)
             {
+                sqlTimer.Stop();
                 _sqlTokenSource.Cancel();
                 SqlStoreTask.Interrupt();
                 //SqlStoreTask.Abort();

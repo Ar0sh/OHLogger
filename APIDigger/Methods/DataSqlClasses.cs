@@ -96,7 +96,7 @@ namespace OHDataLogger.Methods
                 
                 string query = "DECLARE @Time AS DATETIME2(3)\nSET @Time = Convert(DateTime2, '" + OpenHABRest.dtSql.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss.000") + "')\n";                    //GETUTCDATE()\n";
                 //Convert(DateTime2, '" OpenHABRest.dtSql.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss.000") + "')\n";
-                List<Items> ItemsListCopy = OpenHABRest.ItemsList.ToList();
+                List<Items> ItemsListCopy = OpenHABRest.ItemsListTemp.ToList();
                 if(ItemsListCopy.Count != Tables.Count)
                 {
                     foreach (Items item in ItemsListCopy)

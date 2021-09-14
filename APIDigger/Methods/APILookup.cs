@@ -116,6 +116,7 @@ namespace OHDataLogger.Methods
         public void RestConn(bool checkCon = false)
         {
             OpenHABRest._CheckApiCon = true;
+            OpenHABRest.ItemsListTemp = OpenHABRest.ItemsList.ToList();
             OpenHABRest.ItemsList.Clear();
             RestClient restClient = new RestClient("http://" + Properties.Settings.Default.ApiAddr + "/");
             RestRequest request = new RestRequest("rest/items/", Method.GET);
