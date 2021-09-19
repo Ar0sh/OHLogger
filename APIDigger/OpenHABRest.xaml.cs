@@ -186,7 +186,7 @@ namespace OHDataLogger
             API_UpdateDict();
             getApiData.PopulateDataTable();
             dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
-            TableRefresh = new Thread(Update);
+            TableRefresh = new Thread(ApiUpdate);
             TableRefresh.Start();
             if (SqlStoreTask == null && btnSqlLogin.Content.ToString() != "Connect")
             {
@@ -198,17 +198,15 @@ namespace OHDataLogger
             }
         }
 
-        private void Update()
+        private void ApiUpdate()
         {
-            bool watcher = false;
             Stopwatch stopW = new Stopwatch();
             while (!_apiTokenSource.Token.IsCancellationRequested)
             {
-                if (watcher)
+                if (DateTime.Now.Second % NumValue == 0)
                 {
                     try
                     {
-                        bool _apiCancellationTriggered = _apiTokenSource.Token.WaitHandle.WaitOne((Properties.Settings.Default.UpdateInterval * 1000) - (int)stopW.Elapsed.TotalMilliseconds);
                         stopW.Restart();
                         dtApi = DateTime.Now;
                         Items.Clear();
@@ -248,15 +246,12 @@ namespace OHDataLogger
                             UpdateGui(false, true, false);
                         });
                         stopW.Stop();
+                        bool _apiCancellationTriggered = _apiTokenSource.Token.WaitHandle.WaitOne((NumValue * 1000) - (int)stopW.Elapsed.TotalMilliseconds);
                     }
                     catch (Exception ex)
                     {
                         Logger.LogMessage(ex.Message, ErrorLevel.API);
                     }
-                }
-                else if (DateTime.Now.Second % Properties.Settings.Default.UpdateInterval == 0 && !watcher)
-                {
-                    watcher = true;
                 }
             }
         }
