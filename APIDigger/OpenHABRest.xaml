@@ -51,6 +51,22 @@
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
+                <DataGridCheckBoxColumn Header="Enabled" IsReadOnly="False" Width="*" 
+                                        Binding="{Binding Path=Enabled, Mode=TwoWay,  UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridCheckBoxColumn.ElementStyle>
+                        <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+                            <EventSetter Event="Click" Handler="OnChecked"/>
+                            <!--<EventSetter Event="CheckBox.Unchecked" Handler="OnChecked"/>-->
+                        </Style>
+                    </DataGridCheckBoxColumn.ElementStyle>
+                    <!--<DataGridCheckBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type CheckBox}">
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                            <Setter Property="ClickMode" Value="Press"/>
+                            <EventSetter Event="CheckBox.Checked" Handler="OnChecked"/>
+                        </Style>
+                    </DataGridCheckBoxColumn.ElementStyle>-->
+                </DataGridCheckBoxColumn>
             </DataGrid.Columns>
         </DataGrid>
         <StatusBar x:Name="statusBar" Height="25" VerticalAlignment="Bottom">

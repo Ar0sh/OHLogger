@@ -17,7 +17,7 @@ namespace OHDataLogger.Methods
     {
         public SortedDictionary<string, SensorValues> ItemsDict = new SortedDictionary<string, SensorValues>();
         public DataTable ItemsTable = new DataTable("Items");
-        bool tableTest = false;
+        private bool tableTest = false;
         private readonly List<string> exclude = new List<string>
         {
             "test",
@@ -94,11 +94,12 @@ namespace OHDataLogger.Methods
                 ItemsTable.Columns.Add("Label");
                 ItemsTable.Columns.Add("State");
                 ItemsTable.Columns.Add("UpdateTime");
+                ItemsTable.Columns.Add("Enabled");
             }
             foreach (Items item in OpenHABRest.ItemsList)
             {
                 if(!exclude.Contains(item.name))
-                    ItemsTable.Rows.Add(item.name, item.label, item.state, DateTime.Now);
+                    ItemsTable.Rows.Add(item.name, item.label, item.state, DateTime.Now, item.enabled);
             }
             if(tableTest)
             {
@@ -110,7 +111,7 @@ namespace OHDataLogger.Methods
         {
             for(int i = 0; i < itemList.Count; i++)
                 if (!exclude.Contains(itemList[i].name))
-                    ItemsTable.Rows.Add(itemList[i].name, itemList[i].label, itemList[i].state, DateTime.Now);
+                    ItemsTable.Rows.Add(itemList[i].name, itemList[i].label, itemList[i].state, DateTime.Now, itemList[i].enabled);
         }
 
         public void RestConn(bool checkCon = false)

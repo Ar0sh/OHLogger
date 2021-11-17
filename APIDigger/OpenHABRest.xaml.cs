@@ -41,6 +41,7 @@ namespace OHDataLogger
         public static DateTime dtApi = new DateTime();
         public static List<Items> ItemsList = new List<Items>();
         public static List<Items> ItemsListTemp = new List<Items>();
+        public static List<string> ItemsEnabled = new List<string>();
         public static string conStr;
         public static SqlConnection conn;
         public static string ApiMessages = "API Disconnected";
@@ -56,8 +57,15 @@ namespace OHDataLogger
         public bool AdSens = false;
         private readonly int sqlTimeInterval = 60;
         private Secure_It secureIt = new Secure_It();
+        void OnChecked(object sender, RoutedEventArgs e)
+        {
+            DataGridRow RowData = (DataGridRow)dgSensors.ItemContainerGenerator.ContainerFromIndex(dgSensors.SelectedIndex);
+            DataGridCell RowColumn = dgSensors.Columns[0].GetCellContent(RowData).Parent as DataGridCell;
+            string test = ((TextBlock)RowColumn.Content).Text;
+            if (!ItemsEnabled.Contains(test))
+                ItemsEnabled.Add(test);
 
-
+        }
         public OpenHABRest()
         {
             InitializeComponent();
@@ -686,5 +694,6 @@ namespace OHDataLogger
             Properties.Settings.Default.RememberApiLogin = false;
             Properties.Settings.Default.Save();
         }
+
     }
 }

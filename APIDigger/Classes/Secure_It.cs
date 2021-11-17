@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace OHDataLogger.Classes
 {
-    class Secure_It
+    public class Secure_It
     {
         public string DecryptString(string encrString)
         {

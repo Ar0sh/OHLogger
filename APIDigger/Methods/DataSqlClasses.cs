@@ -99,8 +99,13 @@ namespace OHDataLogger.Methods
                 List<Items> ItemsListCopy = OpenHABRest.ItemsListTemp.ToList();
                 if(ItemsListCopy.Count != Tables.Count)
                 {
+                    string stop;
                     foreach (Items item in ItemsListCopy)
                     {
+                        if(item.name == "FF_Bad_kWh")
+                        {
+                            stop = "";
+                        }
                         if (!Tables.Contains(item.name))
                         {
                             CreateTables(item.name, item.type);
