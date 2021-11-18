@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:OHDataLogger"
         mc:Ignorable="d" 
         Height="450" Width="800"
-        MinHeight="450" MinWidth="800"
+        MinHeight="450" MinWidth="1000"
         Closed="Window_Closed"
         Icon="Icon/ApiDigger.ico">
     <Grid>
@@ -23,21 +23,36 @@
                 </ContextMenu>
             </DataGrid.ContextMenu>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Name" IsReadOnly="True" Width="*" Binding="{Binding Name}">
+                <DataGridTextColumn Header="Name" IsReadOnly="True" Width="Auto" Binding="{Binding Name}">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Left"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Label" IsReadOnly="True" Width="200" Binding="{Binding Label}">
+                <DataGridTextColumn Header="Label" IsReadOnly="True" Width="Auto" Binding="{Binding Label}">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Left"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="State" IsReadOnly="True" Width="200" Binding="{Binding State}">
+                <DataGridTextColumn Header="State" IsReadOnly="True" Width="*" Binding="{Binding State}">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Left"/>
@@ -45,27 +60,30 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
                 <DataGridTextColumn Header="Last Update" IsReadOnly="True" Width="150" Binding="{Binding UpdateTime}">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Center"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridCheckBoxColumn Header="Enabled" IsReadOnly="False" Width="*" 
+                <DataGridCheckBoxColumn Header="Enabled" IsReadOnly="False" Width="Auto" 
                                         Binding="{Binding Path=Enabled, Mode=TwoWay,  UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridCheckBoxColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridCheckBoxColumn.HeaderStyle>
                     <DataGridCheckBoxColumn.ElementStyle>
                         <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
                             <EventSetter Event="Click" Handler="OnChecked"/>
-                            <!--<EventSetter Event="CheckBox.Unchecked" Handler="OnChecked"/>-->
+                            <Setter Property="HorizontalAlignment" Value="Center" />
                         </Style>
                     </DataGridCheckBoxColumn.ElementStyle>
-                    <!--<DataGridCheckBoxColumn.ElementStyle>
-                        <Style TargetType="{x:Type CheckBox}">
-                            <Setter Property="HorizontalAlignment" Value="Center"/>
-                            <Setter Property="ClickMode" Value="Press"/>
-                            <EventSetter Event="CheckBox.Checked" Handler="OnChecked"/>
-                        </Style>
-                    </DataGridCheckBoxColumn.ElementStyle>-->
                 </DataGridCheckBoxColumn>
             </DataGrid.Columns>
         </DataGrid>
@@ -125,6 +143,6 @@
                 </Grid>
             </Grid>
         </GroupBox>
-        <Label x:Name="StatusText" Content="" HorizontalAlignment="Left" Margin="665,58,0,0" VerticalAlignment="Top"/>
+        <CheckBox x:Name="ChkEnableAll" Click="CheckUnCheckAll" Content="Enable All" HorizontalAlignment="Left" Margin="673,85,0,0" VerticalAlignment="Top"/>
     </Grid>
 </Window>

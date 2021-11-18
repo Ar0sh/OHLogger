@@ -99,13 +99,8 @@ namespace OHDataLogger.Methods
                 List<Items> ItemsListCopy = OpenHABRest.ItemsListTemp.ToList();
                 if(ItemsListCopy.Count != Tables.Count)
                 {
-                    string stop;
                     foreach (Items item in ItemsListCopy)
                     {
-                        if(item.name == "FF_Bad_kWh")
-                        {
-                            stop = "";
-                        }
                         if (!Tables.Contains(item.name))
                         {
                             CreateTables(item.name, item.type);
@@ -114,28 +109,31 @@ namespace OHDataLogger.Methods
                     GetSqlTables();
                 }
                 string value;
-                Items itemsss;
+                //Items itemsss;
                 Console.WriteLine(OpenHABRest.dtSql.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss.000"));
                 foreach (Items item in ItemsListCopy)
                 {
-                    itemsss = item;
-                    if (item.type.ToLower() == "switch" || item.type.ToLower() == "color" || item.type.ToLower() == "contact")
+                    //itemsss = item;
+                    if (Properties.Settings.Default.Enabled.Contains(item.name))
                     {
-                        value = "'" + item.state.Split(' ')[0] + "'";
+                        if (item.type.ToLower() == "switch" || item.type.ToLower() == "color" || item.type.ToLower() == "contact")
+                        {
+                            value = "'" + item.state.Split(' ')[0] + "'";
+                        }
+                        else if (item.type.ToLower() == "datetime")
+                        {
+                            value = "'" + item.state.Split('+')[0] + "'";
+                        }
+                        else if (item.type.ToLower() == "string")
+                        {
+                            value = "'" + item.state + "'";
+                        }
+                        else
+                        {
+                            value = item.state.Split(' ')[0];
+                        }
+                        query += "insert into " + item.name + " (time, value) values (@Time, " + value + ") \n";
                     }
-                    else if (item.type.ToLower() == "datetime")
-                    {
-                        value = "'" + item.state.Split('+')[0] + "'";
-                    }
-                    else if (item.type.ToLower() == "string")
-                    {
-                        value = "'" + item.state + "'";
-                    }
-                    else
-                    {
-                        value = item.state.Split(' ')[0];
-                    }
-                    query += "insert into " + item.name + " (time, value) values (@Time, " + value + ") \n";
                 }
 
                 SqlCommand sqlCommand = new SqlCommand(query, OpenHABRest.conn);

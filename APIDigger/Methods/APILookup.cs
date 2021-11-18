@@ -48,21 +48,22 @@ namespace OHDataLogger.Methods
             }
         }
 
-        public void UpdateItemsDict()
+        public void UpdateItemsDict(bool? enabled = null)
         {
             RestConn();
             if (OpenHABRest.ItemsList.Count != ItemsDict.Count)
             {
-                foreach(Items item in OpenHABRest.ItemsList)
+                foreach (Items item in OpenHABRest.ItemsList)
                 {
                     if(!ItemsDict.ContainsKey(item.name))
-                    { 
+                    {
                         ItemsDict.Add(item.name, new SensorValues(item.link, item.state, null, item.editable, item.type, item.name, item.label));
                         OpenHABRest.AddedSensor.Add(item);
                     }
                 }
             }
-            foreach (Items item in OpenHABRest.ItemsList)
+            List<Items> list = OpenHABRest.ItemsList.ToList();
+            foreach (Items item in list)
             {
                 if (!exclude.Contains(item.name))
                 {
@@ -85,6 +86,44 @@ namespace OHDataLogger.Methods
             }
         }
 
+        public void EnableItems(bool enabled, string _name = null)
+        {
+            List<Items> list = OpenHABRest.ItemsList.ToList();
+            foreach (Items item in list)
+            {
+                string name = item.name;
+                foreach (DataRow dr in ItemsTable.Rows)
+                {
+                    if (dr["Name"].ToString() == ItemsDict[name].GetName())
+                    {
+                        if (enabled)
+                        {
+                            if (dr[4].ToString() == "False")
+                            {
+                                dr[4] = true;
+                                if (!Properties.Settings.Default.Enabled.Contains(dr["Name"].ToString()))
+                                {
+                                    Properties.Settings.Default.Enabled.Add(dr["Name"].ToString());
+                                }
+                            }
+                        }
+                        else if (!enabled)
+                        {
+                            if (dr[4].ToString() == "True")
+                            {
+                                dr[4] = false;
+                                if (Properties.Settings.Default.Enabled.Contains(dr["Name"].ToString()))
+                                {
+                                    _ = Properties.Settings.Default.Enabled.Remove(dr["Name"].ToString());
+                                }
+                            }
+                        }
+                    }
+                }
+                Properties.Settings.Default.Save();
+            }
+        }
+
         public void PopulateDataTable()
         {
             ItemsTable.Clear();
@@ -99,7 +138,13 @@ namespace OHDataLogger.Methods
             foreach (Items item in OpenHABRest.ItemsList)
             {
                 if(!exclude.Contains(item.name))
-                    ItemsTable.Rows.Add(item.name, item.label, item.state, DateTime.Now, item.enabled);
+                    ItemsTable.Rows.Add(
+                        item.name, 
+                        item.label, 
+                        item.state, 
+                        DateTime.Now,
+                        Properties.Settings.Default.Enabled.Contains(item.name) ? true : false
+                        );
             }
             if(tableTest)
             {
@@ -111,7 +156,13 @@ namespace OHDataLogger.Methods
         {
             for(int i = 0; i < itemList.Count; i++)
                 if (!exclude.Contains(itemList[i].name))
-                    ItemsTable.Rows.Add(itemList[i].name, itemList[i].label, itemList[i].state, DateTime.Now, itemList[i].enabled);
+                    ItemsTable.Rows.Add(
+                        itemList[i].name, 
+                        itemList[i].label, 
+                        itemList[i].state, 
+                        DateTime.Now, 
+                        Properties.Settings.Default.Enabled.Contains(itemList[i].name) ? true : false
+                        );
         }
 
         public void RestConn(bool checkCon = false)

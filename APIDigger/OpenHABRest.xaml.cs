@@ -41,7 +41,6 @@ namespace OHDataLogger
         public static DateTime dtApi = new DateTime();
         public static List<Items> ItemsList = new List<Items>();
         public static List<Items> ItemsListTemp = new List<Items>();
-        public static List<string> ItemsEnabled = new List<string>();
         public static string conStr;
         public static SqlConnection conn;
         public static string ApiMessages = "API Disconnected";
@@ -56,25 +55,40 @@ namespace OHDataLogger
         public static List<Items> AddedSensor = new List<Items>();
         public bool AdSens = false;
         private readonly int sqlTimeInterval = 60;
-        private Secure_It secureIt = new Secure_It();
-        void OnChecked(object sender, RoutedEventArgs e)
+        private readonly Secure_It secureIt = new Secure_It();
+
+        private void OnChecked(object sender, RoutedEventArgs e)
         {
             DataGridRow RowData = (DataGridRow)dgSensors.ItemContainerGenerator.ContainerFromIndex(dgSensors.SelectedIndex);
             DataGridCell RowColumn = dgSensors.Columns[0].GetCellContent(RowData).Parent as DataGridCell;
             string test = ((TextBlock)RowColumn.Content).Text;
-            if (!ItemsEnabled.Contains(test))
-                ItemsEnabled.Add(test);
-
+            if (!Properties.Settings.Default.Enabled.Contains(test))
+            {
+                Properties.Settings.Default.Enabled.Add(test);
+            }
+            else if (Properties.Settings.Default.Enabled.Contains(test))
+            {
+                _ = Properties.Settings.Default.Enabled.Remove(test);
+            }
+            Properties.Settings.Default.Save();
         }
         public OpenHABRest()
         {
             InitializeComponent();
             if (!Directory.Exists(Directory.GetCurrentDirectory() + "/LogFile"))
             {
-                Directory.CreateDirectory(Directory.GetCurrentDirectory() + "/LogFile");
+                _ = Directory.CreateDirectory(Directory.GetCurrentDirectory() + "/LogFile");
             }
             if (!File.Exists(Directory.GetCurrentDirectory() + "/LogFile/LogFile.txt"))
-                File.Create(Directory.GetCurrentDirectory() + "/LogFile/LogFile.txt");
+            {
+                _ = File.Create(Directory.GetCurrentDirectory() + "/LogFile/LogFile.txt");
+            }
+            if (Properties.Settings.Default.Enabled == null)
+            {
+                Properties.Settings.Default.Enabled = new List<string>();
+            }
+            ChkEnableAll.IsChecked = Properties.Settings.Default.EnableAll;
+
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
             UpdateGui(true, true, true);
             Title = "OpenHAB DataLogger";
@@ -695,5 +709,14 @@ namespace OHDataLogger
             Properties.Settings.Default.Save();
         }
 
+        private void CheckUnCheckAll(object sender, RoutedEventArgs e)
+        {
+            DataGridCheckBoxColumn firstCol = dgSensors.Columns.OfType<DataGridCheckBoxColumn>().FirstOrDefault(c => c.DisplayIndex == 4);
+
+            getApiData.EnableItems((bool)(sender as CheckBox).IsChecked);
+            dgSensors.Items.Refresh();
+            Properties.Settings.Default.EnableAll = (bool)(sender as CheckBox).IsChecked;
+            Properties.Settings.Default.Save();
+        }
     }
 }
