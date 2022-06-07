@@ -37,7 +37,7 @@ namespace OHDataLogger
         private bool _apiloggedIn = false;
         private bool _resetSqlInfo = true;
 
-        // Punblic
+        // Public
         public static DateTime dtSql = new DateTime();
         public static DateTime dtApi = new DateTime();
         public static List<Items> ItemsList = new List<Items>();
