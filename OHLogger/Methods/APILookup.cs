@@ -213,18 +213,18 @@ namespace OHDataLogger.Methods
                     OpenHABRest.ApiColor = Brushes.Green;
                     OpenHABRest.ApiMessages = "Api Connected";
                 }
+                return;
             }
             else if (queryResult == null && checkCon)
             {
                 OpenHABRest._CheckApiCon = false;
+                return;
             }
-            else
+
+            if (OpenHABRest.ApiColor != Brushes.Red)
             {
-                if (OpenHABRest.ApiColor != Brushes.Red)
-                {
-                    OpenHABRest.ApiColor = Brushes.Red;
-                    OpenHABRest.ApiMessages = "Api Disconnected";
-                }
+                OpenHABRest.ApiColor = Brushes.Red;
+                OpenHABRest.ApiMessages = "Api Disconnected";
             }
         }
     }

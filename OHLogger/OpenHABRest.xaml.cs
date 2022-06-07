@@ -23,6 +23,7 @@ namespace OHDataLogger
 {
     public partial class OpenHABRest : Window
     {
+        // Private
         private readonly List<string> Items = new List<string>();
         private readonly APILookup getApiData = new APILookup();
         private readonly DataSqlClasses dataSqlClasses = new DataSqlClasses();
@@ -36,6 +37,7 @@ namespace OHDataLogger
         private bool _apiloggedIn = false;
         private bool _resetSqlInfo = true;
 
+        // Punblic
         public static DateTime dtSql = new DateTime();
         public static DateTime dtApi = new DateTime();
         public static List<Items> ItemsList = new List<Items>();
@@ -59,6 +61,7 @@ namespace OHDataLogger
         public OpenHABRest()
         {
             InitializeComponent();
+            // Check if log folder and file exists, create if not.
             if (!Directory.Exists(Directory.GetCurrentDirectory() + "/LogFile"))
             {
                 _ = Directory.CreateDirectory(Directory.GetCurrentDirectory() + "/LogFile");
@@ -67,13 +70,15 @@ namespace OHDataLogger
             {
                 _ = File.Create(Directory.GetCurrentDirectory() + "/LogFile/LogFile.txt");
             }
+
+            // Check app properties settings and configure as needed
             if (Properties.Settings.Default.Enabled == null)
             {
                 Properties.Settings.Default.Enabled = new List<string>();
             }
             ChkEnableAll.IsChecked = Properties.Settings.Default.EnableAll;
-
             tbUpdateSpeed.Text = Properties.Settings.Default.UpdateInterval.ToString();
+            // Update the window
             UpdateGui(true, true, true);
             Title = "OpenHAB DataLogger";
             if (Properties.Settings.Default.RememberApiLogin)
@@ -97,6 +102,7 @@ namespace OHDataLogger
             }
         }
 
+        // Update GUI messaged and colors
         void UpdateGui(bool _Sql, bool _Api = false, bool _Err = false)
         {
             if (_Sql)
@@ -116,6 +122,7 @@ namespace OHDataLogger
             }
         }
 
+        // Check and validate login details
         void UpdateSqlUserPass(string _LoggedIn)
         {
             switch (_LoggedIn)
@@ -162,6 +169,7 @@ namespace OHDataLogger
             }
         }
 
+        // Start SQL task, create tables if missing
         void RunSql()
         {
             foreach (Items item in ItemsList)
@@ -176,6 +184,7 @@ namespace OHDataLogger
                 statSqlTab.Text = SqlTabMessage;
                 statSqlTabItem.Visibility = Visibility.Visible;
             }
+            // Configure SQL Storage task and start same
             SqlStoreTask = new Thread(StoreSqlCall)
             {
                 IsBackground = true
@@ -183,6 +192,7 @@ namespace OHDataLogger
             SqlStoreTask.Start();
         }
 
+        // Start API connection
         void RunApi()
         {
             Functions.SaveApiDetails(tbApiIp.Text, ChkRememberSql.IsChecked);
@@ -194,6 +204,7 @@ namespace OHDataLogger
             dgSensors.DataContext = getApiData.ItemsTable.AsDataView();
             TableRefresh = new Thread(ApiUpdate);
             TableRefresh.Start();
+            // Start SQL Storing task if certain settings is OK and its not running.
             if (SqlStoreTask == null && btnSqlLogin.Content.ToString() != "Connect")
             {
                 SqlStoreTask = new Thread(StoreSqlCall)
@@ -204,6 +215,7 @@ namespace OHDataLogger
             }
         }
 
+        // Update API data.
         private void ApiUpdate()
         {
             Stopwatch stopW = new Stopwatch();
@@ -274,6 +286,7 @@ namespace OHDataLogger
             }
         }
 
+        // Main SQL storing loop.
         private void StoreSqlCall()
         {
             int min = DateTime.Now.Minute;
@@ -351,6 +364,7 @@ namespace OHDataLogger
                         watcher = true;
                         firstrun = true;
                     }
+                    // Sleep for the amount 
                     else if (DateTime.Now.Second % sqlTimeInterval < (sqlTimeInterval - 1 ) && !watcher)
                     {
                         _ = _sqlTokenSource.Token.WaitHandle.WaitOne((sqlTimeInterval * 1000) - (DateTime.Now.Second % sqlTimeInterval * 1000));
@@ -444,46 +458,40 @@ namespace OHDataLogger
                         UpdateGui(false, true, true);
                         _apiloggedIn = true;
                     }
+                    return;
                 }
-                else
-                {
-                    if (tbApiIp.Background == Brushes.Green || tbApiIp.Background == Brushes.White)
-                    {
-                        tbApiIp.Background = Brushes.Red;
-                    }
-                    tbApiIp.IsEnabled = true;
-                }
-            }
-            else
-            {
-                if (_apiloggedIn)
-                {
-                    _apiTokenSource.Cancel();
-                    TableRefresh.Interrupt();
-                    //if (TableRefresh != null)
-                    //    TableRefresh.Abort();
-                    getApiData.ItemsTable.Clear();
-                    ItemsList.Clear();
-                    ItemsListTemp.Clear();
-                    btnConnectApi.IsEnabled = true;
-                    tbApiIp.IsEnabled = true;
-                    btnConnectApi.Content = "Connect";
-                    ApiMessages = "API Disconnected";
-                    SqlErrMessage = "API Lost";
-                    SqlErrColor = Brushes.PaleVioletRed;
-                    ApiColor = Brushes.Red;
-                    if (tbApiIp.Background == Brushes.Red || tbApiIp.Background == Brushes.Green)
-                    {
-                        tbApiIp.Background = Brushes.White;
-                    }
-                    UpdateGui(false, true, true);
-                    _apiloggedIn = false;
-                }
-                else
+                if (tbApiIp.Background == Brushes.Green || tbApiIp.Background == Brushes.White)
                 {
                     tbApiIp.Background = Brushes.Red;
                 }
+                tbApiIp.IsEnabled = true;
+                return;
             }
+            if (_apiloggedIn)
+            {
+                _apiTokenSource.Cancel();
+                TableRefresh.Interrupt();
+                //if (TableRefresh != null)
+                //    TableRefresh.Abort();
+                getApiData.ItemsTable.Clear();
+                ItemsList.Clear();
+                ItemsListTemp.Clear();
+                btnConnectApi.IsEnabled = true;
+                tbApiIp.IsEnabled = true;
+                btnConnectApi.Content = "Connect";
+                ApiMessages = "API Disconnected";
+                SqlErrMessage = "API Lost";
+                SqlErrColor = Brushes.PaleVioletRed;
+                ApiColor = Brushes.Red;
+                if (tbApiIp.Background == Brushes.Red || tbApiIp.Background == Brushes.Green)
+                {
+                    tbApiIp.Background = Brushes.White;
+                }
+                UpdateGui(false, true, true);
+                _apiloggedIn = false;
+                return;
+            }
+            tbApiIp.Background = Brushes.Red;
         }
 
         private async Task LogInOutSql(bool LogIn = true) //async void LogInOutSql(bool LogIn = true)
