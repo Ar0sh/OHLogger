@@ -18,6 +18,9 @@ Default storing is set to 60 seconds.</p>
 </ul>
 
 <img src="https://user-images.githubusercontent.com/73751609/172462220-1326fbad-b340-484d-b69d-addd8a1393b7.png">
+<p>To open items API web page, right click and click "Link"</p>
+<img src="https://user-images.githubusercontent.com/73751609/172467268-730208e7-a71e-4b05-96c6-cab1c0ec8f88.png">
+
 
 <h3>Error Log</h3>
 <p>Using a rolling logger to log errors that might occur.</p>
