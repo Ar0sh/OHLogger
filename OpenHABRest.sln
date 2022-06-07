@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.902
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32526.322
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "APIDigger", "APIDigger\APIDigger.csproj", "{B72B3BB7-29E5-4266-BDFF-49FAE5C5B0DA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OHLogger", "APIDigger\OHLogger.csproj", "{B72B3BB7-29E5-4266-BDFF-49FAE5C5B0DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

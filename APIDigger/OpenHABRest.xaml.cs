@@ -57,21 +57,6 @@ namespace OHDataLogger
         private readonly int sqlTimeInterval = 60;
         private readonly Secure_It secureIt = new Secure_It();
 
-        private void OnChecked(object sender, RoutedEventArgs e)
-        {
-            DataGridRow RowData = (DataGridRow)dgSensors.ItemContainerGenerator.ContainerFromIndex(dgSensors.SelectedIndex);
-            DataGridCell RowColumn = dgSensors.Columns[0].GetCellContent(RowData).Parent as DataGridCell;
-            string test = ((TextBlock)RowColumn.Content).Text;
-            if (!Properties.Settings.Default.Enabled.Contains(test))
-            {
-                Properties.Settings.Default.Enabled.Add(test);
-            }
-            else if (Properties.Settings.Default.Enabled.Contains(test))
-            {
-                _ = Properties.Settings.Default.Enabled.Remove(test);
-            }
-            Properties.Settings.Default.Save();
-        }
         public OpenHABRest()
         {
             InitializeComponent();
@@ -632,7 +617,7 @@ namespace OHDataLogger
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
             TextBlock content = (TextBlock)dgSensors.SelectedCells[0].Column.GetCellContent(dgSensors.SelectedCells[0].Item);
-            _ = Process.Start("http://192.168.1.161:8082/rest/items/" + content.Text);
+            _ = Process.Start("http://" + Properties.Settings.Default.ApiAddr + "/rest/items/" + content.Text);
         }
 
         private void ChkRememberSql_Checked(object sender, RoutedEventArgs e)
@@ -709,12 +694,19 @@ namespace OHDataLogger
             Properties.Settings.Default.Save();
         }
 
+        private void OnChecked(object sender, RoutedEventArgs e)
+        {
+            DataGridRow RowData = (DataGridRow)dgSensors.ItemContainerGenerator.ContainerFromIndex(dgSensors.SelectedIndex);
+            DataGridCell RowColumn = dgSensors.Columns[0].GetCellContent(RowData).Parent as DataGridCell;
+            string itemName = ((TextBlock)RowColumn.Content).Text;
+            getApiData.EnableItems((bool)(sender as CheckBox).IsChecked, itemName);
+        }
+
         private void CheckUnCheckAll(object sender, RoutedEventArgs e)
         {
             DataGridCheckBoxColumn firstCol = dgSensors.Columns.OfType<DataGridCheckBoxColumn>().FirstOrDefault(c => c.DisplayIndex == 4);
 
             getApiData.EnableItems((bool)(sender as CheckBox).IsChecked);
-            dgSensors.Items.Refresh();
             Properties.Settings.Default.EnableAll = (bool)(sender as CheckBox).IsChecked;
             Properties.Settings.Default.Save();
         }

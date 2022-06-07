@@ -30,7 +30,7 @@ namespace OHDataLogger.Methods
             RestConn();
             foreach (Items item in OpenHABRest.ItemsList)
             {
-                if(!exclude.Contains(item.name))
+                if (!exclude.Contains(item.name))
                 {
                     string link = item.link;
                     string state = item.state;
@@ -39,7 +39,7 @@ namespace OHDataLogger.Methods
                     string type = item.type;
                     string name = item.name;
                     string label = item.label;
-                    if(item.stateDescription != null && item.stateDescription.Contains("pattern"))
+                    if (item.stateDescription != null && item.stateDescription.Contains("pattern"))
                     {
                         pattern = item.stateDescription.Split(':')[1].Split(',')[0].TrimStart('"').TrimEnd('"');
                     }
@@ -48,14 +48,14 @@ namespace OHDataLogger.Methods
             }
         }
 
-        public void UpdateItemsDict(bool? enabled = null)
+        public void UpdateItemsDict()
         {
             RestConn();
             if (OpenHABRest.ItemsList.Count != ItemsDict.Count)
             {
                 foreach (Items item in OpenHABRest.ItemsList)
                 {
-                    if(!ItemsDict.ContainsKey(item.name))
+                    if (!ItemsDict.ContainsKey(item.name))
                     {
                         ItemsDict.Add(item.name, new SensorValues(item.link, item.state, null, item.editable, item.type, item.name, item.label));
                         OpenHABRest.AddedSensor.Add(item);
@@ -77,7 +77,6 @@ namespace OHDataLogger.Methods
                             if (dr["Name"].ToString() == ItemsDict[name].GetName())
                             {
                                 dr[2] = state;
-                                //dr[3] = DateTime.Now;
                                 dr[3] = OpenHABRest.dtApi;
                             }
                         }
@@ -88,33 +87,36 @@ namespace OHDataLogger.Methods
 
         public void EnableItems(bool enabled, string _name = null)
         {
-            List<Items> list = OpenHABRest.ItemsList.ToList();
-            foreach (Items item in list)
+            if (_name == null)
             {
-                string name = item.name;
-                foreach (DataRow dr in ItemsTable.Rows)
+                List<Items> list = OpenHABRest.ItemsList.ToList();
+                foreach (Items item in list)
                 {
-                    if (dr["Name"].ToString() == ItemsDict[name].GetName())
+                    string name = item.name;
+                    foreach (DataRow dr in ItemsTable.Rows)
                     {
-                        if (enabled)
+                        if (dr["Name"].ToString() == ItemsDict[name].GetName())
                         {
-                            if (dr[4].ToString() == "False")
+                            if (enabled)
                             {
-                                dr[4] = true;
-                                if (!Properties.Settings.Default.Enabled.Contains(dr["Name"].ToString()))
+                                if (dr[4].ToString() == "False")
                                 {
-                                    Properties.Settings.Default.Enabled.Add(dr["Name"].ToString());
+                                    dr[4] = true;
+                                    if (!Properties.Settings.Default.Enabled.Contains(dr["Name"].ToString()))
+                                    {
+                                        Properties.Settings.Default.Enabled.Add(dr["Name"].ToString());
+                                    }
                                 }
                             }
-                        }
-                        else if (!enabled)
-                        {
-                            if (dr[4].ToString() == "True")
+                            else if (!enabled)
                             {
-                                dr[4] = false;
-                                if (Properties.Settings.Default.Enabled.Contains(dr["Name"].ToString()))
+                                if (dr[4].ToString() == "True")
                                 {
-                                    _ = Properties.Settings.Default.Enabled.Remove(dr["Name"].ToString());
+                                    dr[4] = false;
+                                    if (Properties.Settings.Default.Enabled.Contains(dr["Name"].ToString()))
+                                    {
+                                        _ = Properties.Settings.Default.Enabled.Remove(dr["Name"].ToString());
+                                    }
                                 }
                             }
                         }
@@ -122,29 +124,49 @@ namespace OHDataLogger.Methods
                 }
                 Properties.Settings.Default.Save();
             }
+            else if (_name != null)
+            {
+                string name = _name;
+                foreach (DataRow dr in ItemsTable.Rows)
+                {
+                    if (dr["Name"].ToString() == ItemsDict[name].GetName())
+                    {
+                        if (!Properties.Settings.Default.Enabled.Contains(dr["Name"].ToString()))
+                        {
+                            Properties.Settings.Default.Enabled.Add(dr["Name"].ToString());
+                        }
+                        else if (Properties.Settings.Default.Enabled.Contains(dr["Name"].ToString()))
+                        {
+                            _ = Properties.Settings.Default.Enabled.Remove(dr["Name"].ToString());
+                        }
+                    }
+                }
+            }
         }
 
         public void PopulateDataTable()
         {
             ItemsTable.Clear();
-            if(ItemsTable.Columns.Count == 0)
-            { 
-                ItemsTable.Columns.Add("Name");
-                ItemsTable.Columns.Add("Label");
-                ItemsTable.Columns.Add("State");
-                ItemsTable.Columns.Add("UpdateTime");
-                ItemsTable.Columns.Add("Enabled");
+            if (ItemsTable.Columns.Count == 0)
+            {
+                _ = ItemsTable.Columns.Add("Name");
+                _ = ItemsTable.Columns.Add("Label");
+                _ = ItemsTable.Columns.Add("State");
+                _ = ItemsTable.Columns.Add("UpdateTime");
+                _ = ItemsTable.Columns.Add("Enabled");
             }
             foreach (Items item in OpenHABRest.ItemsList)
             {
                 if(!exclude.Contains(item.name))
-                    ItemsTable.Rows.Add(
-                        item.name, 
-                        item.label, 
-                        item.state, 
+                {
+                    _ = ItemsTable.Rows.Add(
+                        item.name,
+                        item.label,
+                        item.state,
                         DateTime.Now,
-                        Properties.Settings.Default.Enabled.Contains(item.name) ? true : false
+                        Properties.Settings.Default.Enabled.Contains(item.name)
                         );
+                }
             }
             if(tableTest)
             {
@@ -155,14 +177,18 @@ namespace OHDataLogger.Methods
         public void UpdateDataTable(List<Items> itemList)
         {
             for(int i = 0; i < itemList.Count; i++)
+            {
                 if (!exclude.Contains(itemList[i].name))
-                    ItemsTable.Rows.Add(
-                        itemList[i].name, 
-                        itemList[i].label, 
-                        itemList[i].state, 
-                        DateTime.Now, 
-                        Properties.Settings.Default.Enabled.Contains(itemList[i].name) ? true : false
+                {
+                    _ = ItemsTable.Rows.Add(
+                        itemList[i].name,
+                        itemList[i].label,
+                        itemList[i].state,
+                        DateTime.Now,
+                        Properties.Settings.Default.Enabled.Contains(itemList[i].name)
                         );
+                }
+            }
         }
 
         public void RestConn(bool checkCon = false)
@@ -188,7 +214,7 @@ namespace OHDataLogger.Methods
                     OpenHABRest.ApiMessages = "Api Connected";
                 }
             }
-            else if(queryResult == null && checkCon)
+            else if (queryResult == null && checkCon)
             {
                 OpenHABRest._CheckApiCon = false;
             }
